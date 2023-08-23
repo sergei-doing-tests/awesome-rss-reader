@@ -1,0 +1,36 @@
+default_language_version:
+  python: python
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-merge-conflict
+      - id: check-toml
+
+  - repo: https://github.com/psf/black
+    rev: 23.7.0
+    hooks:
+      - id: black
+        language_version: python3.11
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.0.285
+    hooks:
+      - id: ruff
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.5.0
+    hooks:
+      - id: mypy
+        args:
+          - --python-version=3.11
+          - --no-strict-optional
+          - --ignore-missing-imports
+          - --disallow-untyped-defs
+          - --disallow-incomplete-defs
+          - --disallow-untyped-decorators
+          - --check-untyped-defs
+          - --strict-equality

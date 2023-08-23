@@ -1,0 +1,12 @@
+.swp
+.git/
+.idea/
+.DS_Store/
+__pycache__/
+.coverage
+coverage.xml
+/htmlcov/
+/.pytest_cache/
+/.mypy_cache/
+/.ruff_cache/
+/.env

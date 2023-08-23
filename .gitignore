@@ -1,0 +1,11 @@
+~*
+.swp
+*.py[cod]
+coverage.xml
+.coverage
+/htmlcov/
+__pycache__/
+/.pytest_cache
+/.mypy_cache
+/.ruff_cache
+.env

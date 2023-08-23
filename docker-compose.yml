@@ -1,0 +1,41 @@
+version: "3.2"
+
+services:
+  devserver:
+    build:
+      context: .
+    command: api
+    environment:
+      API_HOST: "0.0.0.0"
+      API_POST: 8000
+      API_RELOAD: "true"
+    env_file:
+      - .env
+    depends_on:
+      - postgresql
+    links:
+      - postgresql
+    ports:
+      - "8000:8000"
+    restart: always
+    volumes:
+      - .:/app/src
+
+  postgresql:
+    environment:
+      - POSTGRES_INITDB_ARGS=--nosync
+      - POSTGRES_HOST_AUTH_METHOD=trust
+      - POSTGRES_USER=awesome-rss-reader
+      - POSTGRES_DB=awesome-rss-reader
+      - LANG=en_US.UTF-8
+      - LC_ALL=en_US.UTF-8
+    image: postgres:15.2
+    ports:
+      - "5432:5432"
+    tmpfs:
+      - /run
+      - /var/run
+      - /tmp
+      - /var/lib/postgresql/data
+    logging:
+      driver: none
