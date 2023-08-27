@@ -39,9 +39,14 @@ class PostgresFeedRepository(BasePostgresRepository, FeedRepository):
 
     async def get_or_create(self, new_feed: NewFeed) -> Feed:
         try:
+            return await self.get_by_url(new_feed.url)
+        except FeedNotFoundError:
+            logger.info("Feed does not exist. Creating a new one", url=new_feed.url)
+
+        try:
             return await self._maybe_create(new_feed)
         except FeedAlreadyExistsError as conflict_exc:
-            # try to get the existing feed
+            # a feed with the same url may have been created in the meantime
             try:
                 return await self.get_by_url(new_feed.url)
             except FeedNotFoundError:

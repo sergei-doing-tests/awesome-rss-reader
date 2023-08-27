@@ -34,3 +34,5 @@ repos:
           - --disallow-untyped-decorators
           - --check-untyped-defs
           - --strict-equality
+        additional_dependencies:
+          - types-python-dateutil

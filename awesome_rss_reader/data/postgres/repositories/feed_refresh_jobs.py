@@ -45,6 +45,11 @@ class PostgresFeedRefreshJobRepository(BasePostgresRepository, FeedRefreshJobRep
 
     async def get_or_create(self, new_job: NewFeedRefreshJob) -> FeedRefreshJob:
         try:
+            return await self.get_by_feed_id(new_job.feed_id)
+        except RefreshJobNotFoundError:
+            logger.info("Job for feed does not exist. Creating a new one", feed_id=new_job.feed_id)
+
+        try:
             return await self._maybe_create(new_job)
         except RefreshJobAlreadyExistsError as conflict_exc:
             try:
@@ -107,7 +112,11 @@ class PostgresFeedRefreshJobRepository(BasePostgresRepository, FeedRefreshJobRep
         old_state: FeedRefreshJobState,
         new_state: FeedRefreshJobState,
     ) -> FeedRefreshJob:
-        query = (
+        select_for_update_q = (
+            sa.select(mdl.FeedRefreshJob).with_for_update().where(mdl.FeedRefreshJob.c.id == job_id)
+        )
+
+        update_q = (
             sa.update(mdl.FeedRefreshJob)
             .where(
                 sa.and_(
@@ -120,8 +129,10 @@ class PostgresFeedRefreshJobRepository(BasePostgresRepository, FeedRefreshJobRep
         )
 
         async with self.db.begin() as conn:
-            result = await conn.execute(query)
+            # lock the row to prevent concurrent state transitions
+            await conn.execute(select_for_update_q)
 
+            result = await conn.execute(update_q)
             if row := result.mappings().fetchone():
                 return FeedRefreshJob.model_validate(dict(row))
 

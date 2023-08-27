@@ -1,15 +1,11 @@
-from collections.abc import Awaitable, Callable
-from typing import Any, TypeAlias
+from collections.abc import Callable
 
 import pytest
 import pytest_asyncio
 import sqlalchemy as sa
-from mypy_extensions import VarArg
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from awesome_rss_reader.core.entity.feed import Feed, NewFeed
 from awesome_rss_reader.core.entity.feed_refresh_job import (
-    FeedRefreshJob,
     FeedRefreshJobState,
     FeedRefreshJobUpdates,
     NewFeedRefreshJob,
@@ -24,14 +20,12 @@ from awesome_rss_reader.data.postgres.repositories.feed_refresh_jobs import (
     PostgresFeedRefreshJobRepository,
 )
 from tests.factories.feed import NewFeedFactory
-
-InsertFeedsFixtureT: TypeAlias = Callable[[VarArg(NewFeed)], Awaitable[list[Feed]]]
-InsertRefreshJobsFixtureT: TypeAlias = Callable[
-    [VarArg(NewFeedRefreshJob)], Awaitable[list[FeedRefreshJob]]
-]
-
-FetchOneFixtureT: TypeAlias = Callable[[sa.Select], Awaitable[dict[str, Any] | None]]
-FetchManyFixtureT: TypeAlias = Callable[[sa.Select], Awaitable[list[dict[str, Any]]]]
+from tests.pytest_fixtures.types import (
+    FetchManyFixtureT,
+    FetchOneFixtureT,
+    InsertFeedsFixtureT,
+    InsertRefreshJobsFixtureT,
+)
 
 
 @pytest_asyncio.fixture()

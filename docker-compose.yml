@@ -22,6 +22,12 @@ services:
       - .:/app/src
 
   postgresql:
+    command: >
+      postgres
+        -c log_statement=all
+        -c log_lock_waits=true
+        -c log_min_duration_statement=-1
+        -c log_min_error_statement=panic
     environment:
       - POSTGRES_INITDB_ARGS=--nosync
       - POSTGRES_HOST_AUTH_METHOD=trust

@@ -5,7 +5,11 @@ from uuid import UUID
 import structlog
 
 from awesome_rss_reader.core.entity.feed import Feed, NewFeed
-from awesome_rss_reader.core.entity.feed_refresh_job import FeedRefreshJobState, NewFeedRefreshJob
+from awesome_rss_reader.core.entity.feed_refresh_job import (
+    FeedRefreshJobState,
+    FeedRefreshJobUpdates,
+    NewFeedRefreshJob,
+)
 from awesome_rss_reader.core.entity.user_feed import NewUserFeed, UserFeed
 from awesome_rss_reader.core.repository.atomic import AtomicProvider
 from awesome_rss_reader.core.repository.feed import FeedRepository
@@ -15,6 +19,7 @@ from awesome_rss_reader.core.repository.feed_refresh_job import (
 )
 from awesome_rss_reader.core.repository.user_feed import UserFeedRepository
 from awesome_rss_reader.core.usecase.base import BaseUseCase
+from awesome_rss_reader.utils.dtime import now_aware
 
 logger = structlog.get_logger()
 
@@ -54,12 +59,12 @@ class CreateFeedUseCase(BaseUseCase):
         new_refresh_job = NewFeedRefreshJob(feed_id=feed.id)
         refresh_job = await self.job_repository.get_or_create(new_refresh_job)
 
+        # fmt: off
         logger.debug(
             "Obtained a refresh job for feed",
-            feed_id=feed.id,
-            job_id=refresh_job.id,
-            job_state=refresh_job.state,
+            feed_id=feed.id, job_id=refresh_job.id, job_state=refresh_job.state,
         )
+        # fmt: on
 
         # Don't trigger a job refresh if it's already in progress
         if refresh_job.state in {FeedRefreshJobState.pending, FeedRefreshJobState.in_progress}:
@@ -74,12 +79,21 @@ class CreateFeedUseCase(BaseUseCase):
         # Wow, this is a race. Someone else has already started the job. Well this is fine
         # Because that's what we wanted ourselves, we don't care about this race condition
         except RefreshJobStateTransitionError:
+            # fmt: off
             logger.info(
                 "Feed refresh job is already in progress",
-                feed_id=feed.id,
-                job_id=refresh_job.id,
-                job_state=refresh_job.state,
+                feed_id=feed.id, job_id=refresh_job.id, job_state=refresh_job.state,
             )
+            # fmt: on
+            return
+
+        await self.job_repository.update(
+            job_id=refresh_job.id,
+            updates=FeedRefreshJobUpdates(
+                retries=0,
+                execute_after=now_aware(),
+            ),
+        )
 
     async def _subscribe_user_to_feed(self, feed: Feed, user_uid: uuid.UUID) -> UserFeed:
         new_user_feed = NewUserFeed(user_uid=user_uid, feed_id=feed.id)

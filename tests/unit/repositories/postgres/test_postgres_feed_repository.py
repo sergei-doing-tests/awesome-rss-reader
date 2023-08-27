@@ -1,26 +1,23 @@
 import uuid
-from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime, timedelta
-from typing import Any, TypeAlias
 
 import pytest
 import pytest_asyncio
 import sqlalchemy as sa
-from mypy_extensions import VarArg
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from awesome_rss_reader.core.entity.feed import Feed, FeedOrdering, NewFeed
-from awesome_rss_reader.core.entity.user_feed import NewUserFeed, UserFeed
+from awesome_rss_reader.core.entity.feed import FeedOrdering, NewFeed
+from awesome_rss_reader.core.entity.user_feed import NewUserFeed
 from awesome_rss_reader.core.repository.feed import FeedNotFoundError
 from awesome_rss_reader.data.postgres import models as mdl
 from awesome_rss_reader.data.postgres.repositories.feeds import PostgresFeedRepository
 from tests.factories.feed import NewFeedFactory
 from tests.factories.user import UserFactory
-
-InsertFeedsFixtureT: TypeAlias = Callable[[VarArg(NewFeed)], Awaitable[list[Feed]]]
-InsertUserFeedsFixtureT: TypeAlias = Callable[[VarArg(NewUserFeed)], Awaitable[list[UserFeed]]]
-
-FetchOneFixtureT: TypeAlias = Callable[[sa.Select], Awaitable[dict[str, Any] | None]]
+from tests.pytest_fixtures.types import (
+    FetchOneFixtureT,
+    InsertFeedsFixtureT,
+    InsertUserFeedsFixtureT,
+)
 
 
 @pytest_asyncio.fixture()

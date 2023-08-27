@@ -21,6 +21,7 @@ from awesome_rss_reader.fastapi.depends.auth import get_current_user
 logger = structlog.get_logger()
 
 pytest_plugins = [
+    "tests.pytest_fixtures.api",
     "tests.pytest_fixtures.data",
     "tests.pytest_fixtures.db",
 ]
@@ -100,25 +101,24 @@ def container() -> Container:
 
 
 @pytest.fixture()
-def postgres_database(
-    container: Container,
-    db: AsyncEngine,
-) -> Iterator[AsyncEngine]:
+def postgres_database(container: Container, db: AsyncEngine) -> Iterator[AsyncEngine]:
     with container.database.engine.override(db):
         yield db
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture()
 def fastapi_app(container: Container) -> FastAPI:
-    return api_entrypoint.init(container)
+    app = api_entrypoint.init(container)
+    yield app
+    app.dependency_overrides.clear()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture()
 def api_client(fastapi_app: FastAPI) -> TestClient:
     return TestClient(fastapi_app)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture()
 def api_client_factory(fastapi_app: FastAPI) -> Callable[[User | None], TestClient]:
     def factory(user: User | None = None) -> TestClient:
         async def auth_user() -> User | None:

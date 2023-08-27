@@ -1,4 +1,3 @@
-from collections.abc import Callable
 from datetime import UTC, datetime
 from unittest import mock
 
@@ -13,7 +12,6 @@ from awesome_rss_reader.core.usecase.create_feed import (
     CreateFeedUseCase,
 )
 from tests.factories.feed import FeedFactory
-from tests.factories.user import UserFactory
 
 
 @pytest.fixture()
@@ -22,16 +20,6 @@ def uc(container: Container) -> mock.Mock:
 
     with container.use_cases.create_feed.override(uc):
         yield uc
-
-
-@pytest.fixture()
-def user() -> User:
-    return UserFactory.build()
-
-
-@pytest.fixture()
-def user_api_client(user: User, api_client_factory: Callable) -> TestClient:
-    return api_client_factory(user=user)
 
 
 async def test_create_feed_happy_path(

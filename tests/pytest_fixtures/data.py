@@ -1,5 +1,4 @@
 from collections.abc import Awaitable, Callable
-from typing import Any, TypeAlias
 
 import pytest_asyncio
 import sqlalchemy as sa
@@ -11,7 +10,7 @@ from awesome_rss_reader.core.entity.feed_refresh_job import FeedRefreshJob, NewF
 from awesome_rss_reader.core.entity.user_feed import NewUserFeed, UserFeed
 from awesome_rss_reader.data.postgres import models as mdl
 
-InsertManyFixtureT: TypeAlias = Callable[[sa.Insert], Awaitable[list[dict[str, Any]]]]
+from .types import InsertManyFixtureT
 
 
 @pytest_asyncio.fixture()

@@ -47,9 +47,21 @@ class PostgresUserFeedRepository(BasePostgresRepository, UserFeedRepository):
 
     async def get_or_create(self, new_user_feed: NewUserFeed) -> UserFeed:
         try:
+            return await self.get_for_user_and_feed(
+                user_uid=new_user_feed.user_uid,
+                feed_id=new_user_feed.feed_id,
+            )
+        except UserFeedNotFoundError:
+            # fmt: off
+            logger.info(
+                "User feed does not exist. Creating a new one",
+                user_uid=new_user_feed.user_uid, feed_id=new_user_feed.feed_id,
+            )
+            # fmt: on
+
+        try:
             return await self._maybe_create(new_user_feed)
         except UserFeedAlreadyExistsError as conflict_exc:
-            # try to get the existing user feed
             try:
                 return await self.get_for_user_and_feed(
                     user_uid=new_user_feed.user_uid,
