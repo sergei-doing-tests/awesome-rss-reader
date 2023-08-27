@@ -4,15 +4,7 @@ from uuid import UUID
 from awesome_rss_reader.core.entity.feed import Feed, FeedOrdering, NewFeed
 
 
-class FeedRepositoryError(Exception):
-    ...
-
-
-class FeedNotFoundError(FeedRepositoryError):
-    ...
-
-
-class FeedAlreadyExistsError(FeedRepositoryError):
+class FeedNotFoundError(Exception):
     ...
 
 

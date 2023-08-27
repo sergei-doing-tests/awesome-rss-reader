@@ -7,16 +7,18 @@ from sqlalchemy.exc import IntegrityError
 
 from awesome_rss_reader.core.entity.user_feed import NewUserFeed, UserFeed
 from awesome_rss_reader.core.repository.user_feed import (
-    UserFeedAlreadyExistsError,
     UserFeedNoFeedError,
     UserFeedNotFoundError,
     UserFeedRepository,
-    UserFeedRepositoryError,
 )
 from awesome_rss_reader.data.postgres import models as mdl
 from awesome_rss_reader.data.postgres.repositories.base import BasePostgresRepository
 
 logger = structlog.get_logger()
+
+
+class UserFeedAlreadyExistsError(Exception):
+    ...
 
 
 class PostgresUserFeedRepository(BasePostgresRepository, UserFeedRepository):
@@ -61,20 +63,11 @@ class PostgresUserFeedRepository(BasePostgresRepository, UserFeedRepository):
 
         try:
             return await self._maybe_create(new_user_feed)
-        except UserFeedAlreadyExistsError as conflict_exc:
-            try:
-                return await self.get_for_user_and_feed(
-                    user_uid=new_user_feed.user_uid,
-                    feed_id=new_user_feed.feed_id,
-                )
-            except UserFeedNotFoundError:
-                logger.warning(
-                    "Failed to obtain existing user feed",
-                    user_uid=new_user_feed.user_uid,
-                    feed_id=new_user_feed.feed_id,
-                    error=conflict_exc,
-                )
-                raise conflict_exc
+        except UserFeedAlreadyExistsError:
+            return await self.get_for_user_and_feed(
+                user_uid=new_user_feed.user_uid,
+                feed_id=new_user_feed.feed_id,
+            )
 
     async def _maybe_create(self, new_user_feed: NewUserFeed) -> UserFeed:
         query = sa.insert(mdl.UserFeed).values(new_user_feed.model_dump()).returning(mdl.UserFeed)
@@ -93,16 +86,8 @@ class PostgresUserFeedRepository(BasePostgresRepository, UserFeedRepository):
                 )
                 self._handle_integrity_error_on_create(ie)
 
-            if row := result.mappings().fetchone():
-                return UserFeed.model_validate(dict(row))
-
-        # fmt: off
-        logger.warning(
-            "Failed to create user feed",
-            user_uid=new_user_feed.user_uid, feed_id=new_user_feed.feed_id
-        )
-        # fmt: on
-        raise UserFeedRepositoryError("Failed to subscribe user to feed")
+            row = result.mappings().one()
+            return UserFeed.model_validate(dict(row))
 
     def _handle_integrity_error_on_create(self, ie: IntegrityError) -> None:
         match ie.orig.__cause__:  # type: ignore[union-attr]

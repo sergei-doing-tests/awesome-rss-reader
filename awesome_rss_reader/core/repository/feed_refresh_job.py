@@ -8,23 +8,15 @@ from awesome_rss_reader.core.entity.feed_refresh_job import (
 )
 
 
-class FeedRefreshJobRepositoryError(Exception):
+class RefreshJobNotFoundError(Exception):
     ...
 
 
-class RefreshJobNotFoundError(FeedRefreshJobRepositoryError):
+class RefreshJobNoFeedError(Exception):
     ...
 
 
-class RefreshJobNoFeedError(FeedRefreshJobRepositoryError):
-    ...
-
-
-class RefreshJobAlreadyExistsError(FeedRefreshJobRepositoryError):
-    ...
-
-
-class RefreshJobStateTransitionError(FeedRefreshJobRepositoryError):
+class RefreshJobStateTransitionError(Exception):
     ...
 
 

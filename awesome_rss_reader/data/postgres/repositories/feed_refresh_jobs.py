@@ -13,8 +13,6 @@ from awesome_rss_reader.core.entity.feed_refresh_job import (
 )
 from awesome_rss_reader.core.repository.feed_refresh_job import (
     FeedRefreshJobRepository,
-    FeedRefreshJobRepositoryError,
-    RefreshJobAlreadyExistsError,
     RefreshJobNoFeedError,
     RefreshJobNotFoundError,
     RefreshJobStateTransitionError,
@@ -23,6 +21,12 @@ from awesome_rss_reader.data.postgres import models as mdl
 from awesome_rss_reader.data.postgres.repositories.base import BasePostgresRepository
 
 logger = structlog.get_logger()
+
+
+class _RefreshJobAlreadyExistsError(Exception):
+    """Internal exception to handle unique constraint conflicts."""
+
+    ...
 
 
 class PostgresFeedRefreshJobRepository(BasePostgresRepository, FeedRefreshJobRepository):
@@ -51,21 +55,17 @@ class PostgresFeedRefreshJobRepository(BasePostgresRepository, FeedRefreshJobRep
 
         try:
             return await self._maybe_create(new_job)
-        except RefreshJobAlreadyExistsError as conflict_exc:
-            try:
-                return await self.get_by_feed_id(feed_id=new_job.feed_id)
-            except RefreshJobNotFoundError:
-                logger.warning(
-                    "Failed to obtain existing refresh job",
-                    feed_id=new_job.feed_id,
-                    error=conflict_exc,
-                )
-                raise conflict_exc
+        except _RefreshJobAlreadyExistsError:
+            return await self.get_by_feed_id(feed_id=new_job.feed_id)
 
     async def _maybe_create(self, new_job: NewFeedRefreshJob) -> FeedRefreshJob:
+        # fmt: off
         query = (
-            sa.insert(mdl.FeedRefreshJob).values(new_job.model_dump()).returning(mdl.FeedRefreshJob)
+            sa.insert(mdl.FeedRefreshJob)
+            .values(new_job.model_dump())
+            .returning(mdl.FeedRefreshJob)
         )
+        # fmt: on
 
         async with self.db.begin() as conn:
             try:
@@ -75,18 +75,15 @@ class PostgresFeedRefreshJobRepository(BasePostgresRepository, FeedRefreshJobRep
                 logger.warning("Failed to insert refresh job", feed_id=new_job.feed_id, error=ie)
                 self._handle_integrity_error_on_create(ie)
 
-            if row := result.mappings().fetchone():
-                return FeedRefreshJob.model_validate(dict(row))
-
-        logger.warning("Failed to create refresh_job", feed_id=new_job.feed_id)
-        raise FeedRefreshJobRepositoryError("Failed create refresh job for feed")
+            row = result.mappings().one()
+            return FeedRefreshJob.model_validate(dict(row))
 
     def _handle_integrity_error_on_create(self, ie: IntegrityError) -> None:
         match ie.orig.__cause__:  # type: ignore[union-attr]
             case ForeignKeyViolationError():
                 raise RefreshJobNoFeedError("Referenced feed does not exist") from ie
             case UniqueViolationError():
-                raise RefreshJobAlreadyExistsError("Refresh job already exists") from ie
+                raise _RefreshJobAlreadyExistsError("Refresh job already exists") from ie
             case _:
                 raise ie
 

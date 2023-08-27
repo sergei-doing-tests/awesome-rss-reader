@@ -231,7 +231,6 @@ async def test_update_invalid_job(
 
     # Check that the real job wasn't affected
     db_row = await fetchone(sa.select(mdl.FeedRefreshJob))
-    assert db_row is not None
     assert db_row["retries"] == 1
 
 
@@ -255,7 +254,6 @@ async def test_transit_state_ok(
     assert updated.state == FeedRefreshJobState.complete
 
     db_row = await fetchone(sa.select(mdl.FeedRefreshJob))
-    assert db_row is not None
     assert db_row["id"] == job.id
     assert db_row["state"] == 3
 
@@ -268,7 +266,6 @@ async def test_transit_state_ok(
     assert updated.state == FeedRefreshJobState.pending
 
     db_row = await fetchone(sa.select(mdl.FeedRefreshJob))
-    assert db_row is not None
     assert db_row["id"] == job.id
     assert db_row["state"] == 1
 
@@ -292,7 +289,6 @@ async def test_transit_state_invalid_transition(
         )
 
     db_row = await fetchone(sa.select(mdl.FeedRefreshJob))
-    assert db_row is not None
     assert db_row["id"] == job.id
     assert db_row["state"] == 2
 
@@ -316,6 +312,5 @@ async def test_transit_state_invalid_job(
         )
 
     db_row = await fetchone(sa.select(mdl.FeedRefreshJob))
-    assert db_row is not None
     assert db_row["id"] == job.id
     assert db_row["state"] == 1

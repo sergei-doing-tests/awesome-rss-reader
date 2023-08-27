@@ -4,19 +4,11 @@ from abc import ABC, abstractmethod
 from awesome_rss_reader.core.entity.user_feed import NewUserFeed, UserFeed
 
 
-class UserFeedRepositoryError(Exception):
+class UserFeedNotFoundError(Exception):
     ...
 
 
-class UserFeedNotFoundError(UserFeedRepositoryError):
-    ...
-
-
-class UserFeedAlreadyExistsError(UserFeedRepositoryError):
-    ...
-
-
-class UserFeedNoFeedError(UserFeedRepositoryError):
+class UserFeedNoFeedError(Exception):
     ...
 
 

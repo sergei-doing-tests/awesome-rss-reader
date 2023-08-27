@@ -41,7 +41,6 @@ async def test_create_feed_happy_path(
 
     # feed is created in the database
     db_feed = await fetchone(sa.select(mdl.Feed).where(mdl.Feed.c.id == resp_json["id"]))
-    assert db_feed is not None
     assert db_feed["id"] == resp_json["id"]
     assert db_feed["url"] == "https://example.com/feed.xml"
     assert db_feed["title"] is None
@@ -52,7 +51,6 @@ async def test_create_feed_happy_path(
     db_user_feed = await fetchone(
         sa.select(mdl.UserFeed).where(mdl.UserFeed.c.feed_id == resp_json["id"])
     )
-    assert db_user_feed is not None
     assert db_user_feed["user_uid"] == user.uid
     assert db_user_feed["feed_id"] == resp_json["id"]
 
@@ -60,7 +58,6 @@ async def test_create_feed_happy_path(
     db_refresh_job = await fetchone(
         sa.select(mdl.FeedRefreshJob).where(mdl.FeedRefreshJob.c.feed_id == resp_json["id"])
     )
-    assert db_refresh_job is not None
     assert db_refresh_job["feed_id"] == resp_json["id"]
     assert db_refresh_job["state"] == FeedRefreshJobState.pending.value
 
@@ -93,7 +90,6 @@ async def test_create_feed_already_exists(
 
     # user feed is created in the database
     db_user_feed = await fetchone(sa.select(mdl.UserFeed).where(mdl.UserFeed.c.feed_id == feed.id))
-    assert db_user_feed is not None
     assert db_user_feed["user_uid"] == user.uid
     assert db_user_feed["feed_id"] == feed.id
 
@@ -101,7 +97,6 @@ async def test_create_feed_already_exists(
     db_refresh_job = await fetchone(
         sa.select(mdl.FeedRefreshJob).where(mdl.FeedRefreshJob.c.feed_id == feed.id)
     )
-    assert db_refresh_job is not None
     assert db_refresh_job["feed_id"] == feed.id
     assert db_refresh_job["state"] == FeedRefreshJobState.pending.value
 
@@ -137,7 +132,6 @@ async def test_create_feed_user_feed_already_exists(
     db_refresh_job = await fetchone(
         sa.select(mdl.FeedRefreshJob).where(mdl.FeedRefreshJob.c.feed_id == feed.id)
     )
-    assert db_refresh_job is not None
     assert db_refresh_job["feed_id"] == feed.id
     assert db_refresh_job["state"] == FeedRefreshJobState.pending.value
 

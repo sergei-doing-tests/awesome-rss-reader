@@ -8,15 +8,17 @@ from sqlalchemy.exc import IntegrityError
 
 from awesome_rss_reader.core.entity.feed import Feed, FeedOrdering, NewFeed
 from awesome_rss_reader.core.repository.feed import (
-    FeedAlreadyExistsError,
     FeedNotFoundError,
     FeedRepository,
-    FeedRepositoryError,
 )
 from awesome_rss_reader.data.postgres import models as mdl
 from awesome_rss_reader.data.postgres.repositories.base import BasePostgresRepository
 
 logger = structlog.get_logger()
+
+
+class _UserFeedAlreadyExistsError(Exception):
+    """This an internal exception used for conflict handling."""
 
 
 class PostgresFeedRepository(BasePostgresRepository, FeedRepository):
@@ -45,13 +47,9 @@ class PostgresFeedRepository(BasePostgresRepository, FeedRepository):
 
         try:
             return await self._maybe_create(new_feed)
-        except FeedAlreadyExistsError as conflict_exc:
+        except _UserFeedAlreadyExistsError:
             # a feed with the same url may have been created in the meantime
-            try:
-                return await self.get_by_url(new_feed.url)
-            except FeedNotFoundError:
-                logger.warning("Failed to obtain existing feed", url=new_feed.url)
-                raise conflict_exc
+            return await self.get_by_url(new_feed.url)
 
     async def _maybe_create(self, new_feed: NewFeed) -> Feed:
         query = sa.insert(mdl.Feed).values(new_feed.model_dump()).returning(mdl.Feed)
@@ -65,16 +63,13 @@ class PostgresFeedRepository(BasePostgresRepository, FeedRepository):
                 logger.warning("Failed to insert feed", url=new_feed.url, error=ie)
                 self._handle_integrity_error_on_create(ie)
 
-            if row := result.mappings().fetchone():
-                return Feed.model_validate(dict(row))
-
-        logger.warning("Failed to create feed", url=new_feed.url)
-        raise FeedRepositoryError("Failed to create feed")
+            row = result.mappings().one()
+            return Feed.model_validate(dict(row))
 
     def _handle_integrity_error_on_create(self, ie: IntegrityError) -> None:
         match ie.orig.__cause__:  # type: ignore[union-attr]
             case UniqueViolationError():
-                raise FeedAlreadyExistsError("Feed already exists") from ie
+                raise _UserFeedAlreadyExistsError("Feed already exists") from ie
             case _:
                 raise ie
 

@@ -165,7 +165,6 @@ async def test_get_or_create_new(repo: PostgresFeedRepository, fetchone: FetchOn
 
     query = sa.select(mdl.Feed).where(mdl.Feed.c.id == feed.id)
     db_row = await fetchone(query)
-    assert db_row is not None
     assert db_row["id"] == feed.id
     assert db_row["url"] == feed.url
     assert db_row["title"] is None

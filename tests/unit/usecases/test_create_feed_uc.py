@@ -46,10 +46,7 @@ async def test_happy_path(
     user_feed_repository.get_or_create.return_value = user_feed
     job_repository.get_or_create.return_value = refresh_job
 
-    uc_input = CreateFeedInput(
-        user_uid=user_uid,
-        url=url,
-    )
+    uc_input = CreateFeedInput(user_uid=user_uid, url=url)
     uc_result = await uc.execute(uc_input)
 
     assert uc_result.feed == feed
@@ -142,12 +139,7 @@ async def test_job_state_transition_error_is_handled(
 
     job_repository.transit_state.side_effect = RefreshJobStateTransitionError()
 
-    await uc.execute(
-        CreateFeedInput(
-            user_uid=user_feed.user_uid,
-            url=feed.url,
-        )
-    )
+    await uc.execute(CreateFeedInput(user_uid=user_feed.user_uid, url=feed.url))
 
     job_repository.transit_state.assert_called_once_with(
         job_id=refresh_job.id,

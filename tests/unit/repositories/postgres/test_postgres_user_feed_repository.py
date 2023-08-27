@@ -221,6 +221,7 @@ async def test_get_or_create_feed_not_found(repo: PostgresUserFeedRepository) ->
 async def test_delete(
     repo: PostgresUserFeedRepository,
     fetchone: FetchOneFixtureT,
+    fetchmany: FetchManyFixtureT,
     insert_feeds: InsertFeedsFixtureT,
     insert_user_feeds: InsertUserFeedsFixtureT,
 ) -> None:
@@ -238,12 +239,11 @@ async def test_delete(
 
     await repo.delete(uf1.id)
     # the specified user feed should be deleted
-    no_row = await fetchone(sa.select(mdl.UserFeed).where(mdl.UserFeed.c.id == uf1.id))
-    assert no_row is None
+    no_rows = await fetchmany(sa.select(mdl.UserFeed).where(mdl.UserFeed.c.id == uf1.id))
+    assert no_rows == []
 
     # the other user feed should not be deleted
     other_row = await fetchone(sa.select(mdl.UserFeed).where(mdl.UserFeed.c.id == uf2.id))
-    assert other_row is not None
     assert other_row["id"] == uf2.id
 
     # the delete operation is idempotent
