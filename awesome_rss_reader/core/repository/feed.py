@@ -4,7 +4,15 @@ from uuid import UUID
 from awesome_rss_reader.core.entity.feed import Feed, FeedOrdering, NewFeed
 
 
-class FeedNotFoundError(Exception):
+class FeedRepositoryError(Exception):
+    ...
+
+
+class FeedNotFoundError(FeedRepositoryError):
+    ...
+
+
+class FeedAlreadyExistsError(FeedRepositoryError):
     ...
 
 
@@ -25,9 +33,9 @@ class FeedRepository(ABC):
     async def get_list(
         self,
         *,
+        followed_by: UUID | None = None,
+        order_by: FeedOrdering = FeedOrdering.id_asc,
         limit: int,
         offset: int,
-        followed_by_user: UUID | None = None,
-        order_by: FeedOrdering | None = None,
     ) -> list[Feed]:
         ...

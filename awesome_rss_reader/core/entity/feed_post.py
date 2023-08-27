@@ -16,10 +16,5 @@ class FeedPost(BaseModel):
     )
 
 
-class UserFeedPostReadState(Enum):
-    read = auto()
-    unread = auto()
-
-
 class FeedPostOrdering(Enum):
     published_at = auto()

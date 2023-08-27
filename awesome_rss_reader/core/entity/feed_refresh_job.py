@@ -32,6 +32,5 @@ class FeedRefreshJob(NewFeedRefreshJob):
 
 
 class FeedRefreshJobUpdates(BaseModel):
-    state: FeedRefreshJobState | None = None
     execute_after: AwareDatetime | None = None
     retries: int | None = None

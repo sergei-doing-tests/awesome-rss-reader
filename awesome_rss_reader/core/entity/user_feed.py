@@ -1,3 +1,4 @@
+from enum import Enum, auto
 from uuid import UUID
 
 from pydantic import AwareDatetime, BaseModel
@@ -11,3 +12,8 @@ class NewUserFeed(BaseModel):
 class UserFeed(NewUserFeed):
     id: int  # noqa: A003
     created_at: AwareDatetime
+
+
+class UserFeedPostReadState(Enum):
+    read = auto()
+    unread = auto()

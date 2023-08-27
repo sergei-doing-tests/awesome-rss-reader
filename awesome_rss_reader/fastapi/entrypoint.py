@@ -10,7 +10,7 @@ from awesome_rss_reader.fastapi.misc.router import router as misc_router
 def init(container: Container) -> FastAPI:
     app_settings = container.settings.app()
 
-    app = FastAPI(version=app_settings.release_ver)
+    app = FastAPI(title=app_settings.name, version=app_settings.release_ver)
     app.include_router(misc_router)
     app.include_router(api_router, prefix="/api")
 

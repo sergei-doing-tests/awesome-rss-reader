@@ -18,4 +18,5 @@ class Feed(NewFeed):
 
 
 class FeedOrdering(Enum):
-    refreshed_at = auto()
+    id_asc = auto()
+    refreshed_at_desc = auto()

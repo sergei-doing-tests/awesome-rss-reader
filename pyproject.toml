@@ -28,6 +28,7 @@ feedparser = "^6.0.10"
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.0.285"
 mypy = "^1.5.1"
+mypy-extensions = "^1.0.0"
 black = "^23.7.0"
 pytest = "^7.4.0"
 pytest-cov = "^4.1.0"
@@ -95,6 +96,7 @@ ignore = [
     "B904" ,    # Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None`
     "EM101",    # Exception must not use a string literal, assign to variable first
     "B008",     # Do not perform function call `Depends` in argument defaults
+    "EM102",    # Exception must not use an f-string literal, assign to variable first
 ]
 fixable = ["ALL"]
 unfixable = []

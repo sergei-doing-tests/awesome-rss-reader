@@ -4,8 +4,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class ApplicationSettings(BaseSettings):
-    release_ver: str = "unknown"
+    name: str = "Awesome RSS Reader"
+    release_ver: str = "development"
     release_commit: str = "unknown"
+
+    model_config = SettingsConfigDict(env_prefix="APP_")
 
 
 class AuthSettings(BaseSettings):
