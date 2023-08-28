@@ -5,6 +5,7 @@ from awesome_rss_reader.application.settings import ApplicationSettings, AuthSet
 from awesome_rss_reader.core.usecase.authenticate_user import AuthenticateUserUseCase
 from awesome_rss_reader.core.usecase.create_feed import CreateFeedUseCase
 from awesome_rss_reader.core.usecase.follow_feed import FollowFeedUseCase
+from awesome_rss_reader.core.usecase.list_feed_posts import ListFeedPostsUseCase
 from awesome_rss_reader.core.usecase.list_user_feeds import ListUserFollowedFeedsUseCase
 from awesome_rss_reader.core.usecase.refresh_feed import RefreshFeedUseCase
 from awesome_rss_reader.core.usecase.unfollow_feed import UnfollowFeedUseCase
@@ -14,6 +15,7 @@ from awesome_rss_reader.data.postgres.database import (
     init_async_engine,
 )
 from awesome_rss_reader.data.postgres.repositories.atomic import PostgresAtomicProvider
+from awesome_rss_reader.data.postgres.repositories.feed_posts import PostgresFeedPostRepository
 from awesome_rss_reader.data.postgres.repositories.feed_refresh_jobs import (
     PostgresFeedRefreshJobRepository,
 )
@@ -43,6 +45,7 @@ class Repositories(containers.DeclarativeContainer):
     feeds = providers.Singleton(PostgresFeedRepository, db=database.engine)
     user_feeds = providers.Singleton(PostgresUserFeedRepository, db=database.engine)
     feed_refresh_jobs = providers.Singleton(PostgresFeedRefreshJobRepository, db=database.engine)
+    feed_posts = providers.Singleton(PostgresFeedPostRepository, db=database.engine)
 
 
 class UseCases(containers.DeclarativeContainer):
@@ -81,6 +84,11 @@ class UseCases(containers.DeclarativeContainer):
         feed_repository=repositories.feeds,
         job_repository=repositories.feed_refresh_jobs,
         atomic=repositories.atomic,
+    )
+
+    list_feed_posts = providers.Factory(
+        ListFeedPostsUseCase,
+        post_repository=repositories.feed_posts,
     )
 
 

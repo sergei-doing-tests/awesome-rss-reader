@@ -6,6 +6,7 @@ import pytest
 from awesome_rss_reader.application.di import Container
 from awesome_rss_reader.core.repository.atomic import AtomicProvider
 from awesome_rss_reader.core.repository.feed import FeedRepository
+from awesome_rss_reader.core.repository.feed_post import FeedPostRepository
 from awesome_rss_reader.core.repository.feed_refresh_job import FeedRefreshJobRepository
 from awesome_rss_reader.core.repository.user_feed import UserFeedRepository
 
@@ -31,6 +32,14 @@ def user_feed_repository(container: Container) -> Iterator[mock.Mock]:
     repo_mock = mock.Mock(spec=UserFeedRepository)
 
     with container.repositories.user_feeds.override(repo_mock):
+        yield repo_mock
+
+
+@pytest.fixture()
+def post_repository(container: Container) -> Iterator[mock.Mock]:
+    repo_mock = mock.Mock(spec=FeedPostRepository)
+
+    with container.repositories.feed_posts.override(repo_mock):
         yield repo_mock
 
 

@@ -19,7 +19,7 @@ from awesome_rss_reader.data.postgres import models as mdl
 from awesome_rss_reader.data.postgres.repositories.feed_refresh_jobs import (
     PostgresFeedRefreshJobRepository,
 )
-from tests.factories.feed import NewFeedFactory
+from tests.factories import NewFeedFactory
 from tests.pytest_fixtures.types import (
     FetchManyFixtureT,
     FetchOneFixtureT,

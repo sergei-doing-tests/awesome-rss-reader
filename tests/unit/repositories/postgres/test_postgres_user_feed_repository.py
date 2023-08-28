@@ -9,7 +9,7 @@ from awesome_rss_reader.core.entity.user_feed import NewUserFeed
 from awesome_rss_reader.core.repository.user_feed import UserFeedNoFeedError, UserFeedNotFoundError
 from awesome_rss_reader.data.postgres import models as mdl
 from awesome_rss_reader.data.postgres.repositories.user_feeds import PostgresUserFeedRepository
-from tests.factories.feed import NewFeedFactory
+from tests.factories import NewFeedFactory
 from tests.pytest_fixtures.types import (
     FetchManyFixtureT,
     FetchOneFixtureT,

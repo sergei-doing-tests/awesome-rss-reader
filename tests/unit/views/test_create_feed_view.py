@@ -11,7 +11,7 @@ from awesome_rss_reader.core.usecase.create_feed import (
     CreateFeedOutput,
     CreateFeedUseCase,
 )
-from tests.factories.feed import FeedFactory
+from tests.factories import FeedFactory
 
 
 @pytest.fixture()

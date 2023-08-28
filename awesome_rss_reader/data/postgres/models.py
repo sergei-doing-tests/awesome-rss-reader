@@ -65,7 +65,7 @@ UserPost = sa.Table(
     sa.Column("post_id", sa.Integer, nullable=False),
     sa.Column("read_at", sa.DateTime(timezone=True), nullable=False),
     sa.ForeignKeyConstraint(["post_id"], ["feed_post.id"], name="user_post_post_id_fkey"),
-    sa.PrimaryKeyConstraint("user_uid", "post_id", name="user_post_user_uid_post_id_key"),
+    sa.UniqueConstraint("user_uid", "post_id", name="user_post_user_uid_post_id_key"),
 )
 
 

@@ -10,9 +10,7 @@ from awesome_rss_reader.core.entity.feed_refresh_job import FeedRefreshJobState,
 from awesome_rss_reader.core.entity.user import User
 from awesome_rss_reader.data.postgres import models as mdl
 from awesome_rss_reader.utils.dtime import now_aware
-from tests.factories.feed import NewFeedFactory
-from tests.factories.feed_refresh_job import NewFeedRefreshJobFactory
-from tests.factories.user_feed import NewUserFeedFactory
+from tests.factories import NewFeedFactory, NewFeedRefreshJobFactory, NewUserFeedFactory
 from tests.pytest_fixtures.types import (
     FetchManyFixtureT,
     FetchOneFixtureT,

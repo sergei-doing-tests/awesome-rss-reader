@@ -13,9 +13,7 @@ from awesome_rss_reader.core.entity.feed_refresh_job import (
 from awesome_rss_reader.core.entity.user_feed import NewUserFeed
 from awesome_rss_reader.core.repository.feed_refresh_job import RefreshJobStateTransitionError
 from awesome_rss_reader.core.usecase.create_feed import CreateFeedInput, CreateFeedUseCase
-from tests.factories.feed import FeedFactory
-from tests.factories.feed_refresh_job import FeedRefreshJobFactory
-from tests.factories.user_feed import UserFeedFactory
+from tests.factories import FeedFactory, FeedRefreshJobFactory, UserFeedFactory
 
 
 @pytest.fixture()

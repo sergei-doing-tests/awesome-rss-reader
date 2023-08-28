@@ -4,7 +4,7 @@ import pytest
 from starlette.testclient import TestClient
 
 from awesome_rss_reader.core.entity.user import User
-from tests.factories.user import UserFactory
+from tests.factories import UserFactory
 
 
 @pytest.fixture()

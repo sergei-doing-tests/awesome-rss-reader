@@ -16,8 +16,7 @@ from awesome_rss_reader.core.usecase.refresh_feed import (
     RefreshFeedOutput,
     RefreshFeedUseCase,
 )
-from tests.factories.feed import FeedFactory
-from tests.factories.feed_refresh_job import FeedRefreshJobFactory
+from tests.factories import FeedFactory, FeedRefreshJobFactory
 
 
 @pytest.fixture()

@@ -4,9 +4,7 @@ from starlette.testclient import TestClient
 
 from awesome_rss_reader.core.entity.user import User
 from awesome_rss_reader.data.postgres import models as mdl
-from tests.factories.feed import NewFeedFactory
-from tests.factories.user import UserFactory
-from tests.factories.user_feed import NewUserFeedFactory
+from tests.factories import NewFeedFactory, NewUserFeedFactory, UserFactory
 from tests.pytest_fixtures.types import (
     FetchManyFixtureT,
     InsertFeedsFixtureT,

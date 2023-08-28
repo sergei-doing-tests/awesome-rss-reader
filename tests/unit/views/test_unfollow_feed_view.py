@@ -10,7 +10,7 @@ from awesome_rss_reader.core.usecase.unfollow_feed import (
     UnfollowFeedInput,
     UnfollowFeedUseCase,
 )
-from tests.factories.user_feed import UserFeedFactory
+from tests.factories import UserFeedFactory
 
 
 @pytest.fixture()
