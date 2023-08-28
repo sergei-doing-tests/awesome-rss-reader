@@ -31,6 +31,8 @@ ENV PATH /app/.venv/bin:/home/app/.local/bin:$PATH
 COPY --chown=app:app pyproject.toml poetry.lock /app/
 RUN poetry install --no-interaction --without dev
 
+COPY --chown=app:app . /app/src
+
 ARG git_release_ver
 ENV APP_RELEASE_VER $git_release_ver
 ARG git_release_sha
