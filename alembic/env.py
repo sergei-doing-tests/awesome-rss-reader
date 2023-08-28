@@ -27,7 +27,7 @@ target_metadata = metadata
 # ... etc.
 
 if db_dsn := os.environ.get("POSTGRES_DB_DSN"):
-    db_dsn.replace("+asyncpg", "+psycopg")
+    db_dsn = db_dsn.replace("+asyncpg", "+psycopg")
     config.set_main_option("sqlalchemy.url", db_dsn)
 
 
