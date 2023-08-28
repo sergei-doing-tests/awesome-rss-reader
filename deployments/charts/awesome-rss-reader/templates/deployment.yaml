@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "awesome-rss-reader.fullname" . }}
+  labels:
+    {{- include "awesome-rss-reader.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.uvicorn.replicas }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 50%
+      maxUnavailable: 25%
+  selector:
+    matchLabels:
+      {{- include "awesome-rss-reader.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "awesome-rss-reader.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with $.Values.image.pullSecrets }}
+      imagePullSecrets:
+          {{- toYaml . | nindent 8 }}
+      {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.uvicorn.terminationGracePeriodSeconds }}
+      containers:
+        - name: {{ include "awesome-rss-reader.fullname" . }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: uvicorn
+              containerPort: {{ .Values.uvicorn.targetPort }}
+              protocol: TCP
+          env:
+          {{- range $key, $val := .Values.uvicorn.env }}
+            - name: {{ $key }}
+              value: "{{ $val }}"
+          {{- end }}
+          {{- range $key, $val := .Values.sharedEnv }}
+            - name: {{ $key }}
+              value: "{{ $val }}"
+          {{- end }}
+          envFrom:
+          {{- range .Values.envFromSecrets }}
+            - secretRef:
+                name: {{ tpl .name $ }}
+                optional: {{ .optional | default false }}
+          {{- end }}
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.uvicorn.resources | nindent 12 }}

@@ -1,0 +1,63 @@
+image:
+  repository: ghcr.io/sergei-doing-tests/awesome-rss-reader
+  pullPolicy: IfNotPresent
+  pullSecrets: ""
+  tag: ""
+
+uvicorn:
+  port: 8800
+  targetPort: 8800
+  replicas: 2
+  terminationGracePeriodSeconds: 10
+  env:
+    API_HOST: "0.0.0.0"
+    API_PORT: 8800
+    API_LOG_LEVEL: "info"
+  resources: {}
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+service:
+  type: ClusterIP
+  name: awesome-rss-reader
+
+ingress:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+  hosts:
+    - host: arr.khoroshilov.tech
+      paths:
+        - path: /
+          pathType: Prefix
+          service:
+            name: awesome-rss-reader
+            portName: uvicorn
+
+envFromSecrets:
+# - name: secret-name
+#   optional: true
+
+readinessProbe:
+  httpGet:
+    path: /info
+    port: app
+  periodSeconds: 10
+  initialDelaySeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+livenessProbe:
+  httpGet:
+    path: /info
+    port: app
+  periodSeconds: 30
+  initialDelaySeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+
+sharedEnv:
+#  key: "value"
