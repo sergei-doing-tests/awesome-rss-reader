@@ -45,7 +45,7 @@ class PostgresUserFeedRepository(BasePostgresRepository, UserFeedRepository):
             if row := result.mappings().fetchone():
                 return UserFeed.model_validate(dict(row))
 
-        raise UserFeedNotFoundError(f"UserFeed for user {user_uid} and feed {feed_id} not found")
+        raise UserFeedNotFoundError(f"UserFeed for {user_uid=} and {feed_id=} not found")
 
     async def get_or_create(self, new_user_feed: NewUserFeed) -> UserFeed:
         try:
@@ -78,12 +78,12 @@ class PostgresUserFeedRepository(BasePostgresRepository, UserFeedRepository):
                 async with conn.begin_nested():
                     result = await conn.execute(query)
             except IntegrityError as ie:
+                # fmt: off
                 logger.warning(
                     "Failed to insert user feed",
-                    user_uid=new_user_feed.user_uid,
-                    feed_id=new_user_feed.feed_id,
-                    error=ie,
+                    user_uid=new_user_feed.user_uid, feed_id=new_user_feed.feed_id, error=ie,
                 )
+                # fmt: on
                 self._handle_integrity_error_on_create(ie)
 
             row = result.mappings().one()

@@ -39,7 +39,7 @@ async def test_read_post_happy_path(
     uc.execute.assert_called_once_with(ReadPostInput(user_uid=user.uid, post_id=1))
 
 
-async def test_read_post_post_not_found(
+async def test_read_post_not_found(
     user: User,
     user_api_client: TestClient,
     uc: mock.Mock,

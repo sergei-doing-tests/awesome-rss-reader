@@ -63,7 +63,7 @@ async def test_post_not_found(
     user_post_repository: mock.Mock,
     uc: ReadPostUseCase,
 ) -> None:
-    post_repository.get_by_id.side_effect = post_repo.PostNotFoundError
+    post_repository.get_by_id.side_effect = post_repo.FeedPostNotFoundError
 
     uc_input = ReadPostInput(user_uid=uuid.uuid4(), post_id=1)
     with pytest.raises(PostNotFoundError):

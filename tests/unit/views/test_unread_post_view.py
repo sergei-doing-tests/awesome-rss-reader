@@ -33,7 +33,7 @@ async def test_unread_post_happy_path(
     uc.execute.assert_called_once_with(UnreadPostInput(user_uid=user.uid, post_id=1))
 
 
-async def test_unread_post_post_does_not_exist(
+async def test_unread_post_does_not_exist(
     user: User,
     user_api_client: TestClient,
     uc: mock.Mock,

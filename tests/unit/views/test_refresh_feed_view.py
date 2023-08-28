@@ -36,7 +36,7 @@ async def test_refresh_feed_happy_path(
     uc.execute.assert_called_once_with(RefreshFeedInput(feed_id=1))
 
 
-async def test_refresh_feed_feed_does_not_exist(
+async def test_refreshed_feed_does_not_exist(
     user_api_client: TestClient,
     uc: mock.Mock,
 ) -> None:

@@ -39,7 +39,7 @@ async def test_follow_feed_happy_path(
     uc.execute.assert_called_once_with(FollowFeedInput(user_uid=user.uid, feed_id=1))
 
 
-async def test_follow_feed_feed_not_found(
+async def test_followed_feed_not_found(
     user: User,
     user_api_client: TestClient,
     uc: mock.Mock,

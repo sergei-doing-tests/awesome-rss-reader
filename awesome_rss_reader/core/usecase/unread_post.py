@@ -33,7 +33,7 @@ class UnreadPostUseCase(BaseUseCase):
     async def _get_post(self, post_id: int) -> FeedPost:
         try:
             return await self.post_repository.get_by_id(post_id)
-        except post_repo.PostNotFoundError:
+        except post_repo.FeedPostNotFoundError:
             logger.info("Requested post to unread not found", post_id=post_id)
             raise PostNotFoundError(f"Post with {post_id=} not found in repository")
 

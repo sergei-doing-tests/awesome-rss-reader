@@ -1,10 +1,12 @@
 from datetime import timedelta
 
 import pytest
+import pytest_asyncio
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette.testclient import TestClient
 
+from awesome_rss_reader.core.entity.feed import Feed
 from awesome_rss_reader.core.entity.feed_refresh_job import FeedRefreshJobState
 from awesome_rss_reader.data.postgres import models as mdl
 from awesome_rss_reader.utils.dtime import now_aware
@@ -15,6 +17,14 @@ from tests.pytest_fixtures.types import (
     InsertFeedsFixtureT,
     InsertRefreshJobsFixtureT,
 )
+
+
+@pytest_asyncio.fixture()
+async def feed(insert_feeds: InsertFeedsFixtureT) -> Feed:
+    feed, *_ = await insert_feeds(
+        NewFeedFactory.build(url="https://example.com/feed.xml"),
+    )
+    return feed
 
 
 async def test_refresh_feed_happy_path(
@@ -105,9 +115,9 @@ async def test_refresh_feed_refresh_job_is_created(
 async def test_refresh_feed_refresh_job_is_queued(
     postgres_database: AsyncEngine,
     user_api_client: TestClient,
-    insert_feeds: InsertFeedsFixtureT,
     insert_refresh_jobs: InsertRefreshJobsFixtureT,
     fetchmany: FetchManyFixtureT,
+    feed: Feed,
     current_state: FeedRefreshJobState,
     new_state: FeedRefreshJobState,
     job_is_reset: bool,
@@ -115,9 +125,6 @@ async def test_refresh_feed_refresh_job_is_queued(
     now = now_aware()
     future = now + timedelta(hours=1)
 
-    feed, *_ = await insert_feeds(
-        NewFeedFactory.build(url="https://example.com/feed.xml"),
-    )
     refresh_job, *_ = await insert_refresh_jobs(
         NewFeedRefreshJobFactory.build(
             feed_id=feed.id,
@@ -148,7 +155,7 @@ async def test_refresh_feed_refresh_job_is_queued(
     assert db_refresh_job["state"] == new_state.value
 
 
-async def test_refresh_feed_feed_does_not_exist(
+async def test_refreshed_feed_does_not_exist(
     postgres_database: AsyncEngine,
     user_api_client: TestClient,
 ) -> None:
@@ -160,12 +167,8 @@ async def test_refresh_feed_feed_does_not_exist(
 async def test_refresh_feed_requires_auth(
     postgres_database: AsyncEngine,
     api_client: TestClient,
-    insert_feeds: InsertFeedsFixtureT,
+    feed: Feed,
 ) -> None:
-    feed, *_ = await insert_feeds(
-        NewFeedFactory.build(url="https://example.com/feed.xml"),
-    )
-
     resp = api_client.post(f"/api/feeds/{feed.id}/refresh")
     assert resp.status_code == 401
     assert resp.json() == {"detail": "Not authenticated"}

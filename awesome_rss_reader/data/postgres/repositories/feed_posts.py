@@ -1,14 +1,14 @@
 import uuid
 from enum import Enum, auto
+from typing import Any
 
 import sqlalchemy as sa
 import structlog
 
 from awesome_rss_reader.core.entity.feed_post import FeedPost, FeedPostFiltering, FeedPostOrdering
-from awesome_rss_reader.core.repository.feed_post import FeedPostRepository
+from awesome_rss_reader.core.repository.feed_post import FeedPostNotFoundError, FeedPostRepository
 from awesome_rss_reader.data.postgres import models as mdl
 from awesome_rss_reader.data.postgres.repositories.base import BasePostgresRepository
-from tests.factories import FeedPostFactory
 
 logger = structlog.get_logger()
 
@@ -25,7 +25,21 @@ class _PostReadStatus(Enum):
 
 class PostgresFeedPostRepository(BasePostgresRepository, FeedPostRepository):
     async def get_by_id(self, post_id: int) -> FeedPost:
-        return FeedPostFactory.build()
+        return await self._get_by_field("id", post_id)
+
+    async def get_by_guid(self, guid: str) -> FeedPost:
+        return await self._get_by_field("guid", guid)
+
+    async def _get_by_field(self, field: str, value: Any) -> FeedPost:
+        query = sa.select(mdl.FeedPost).where(sa.column(field) == value)
+
+        async with self.db.connect() as conn:
+            result = await conn.execute(query)
+
+            if row := result.mappings().fetchone():
+                return FeedPost.model_validate(dict(row))
+
+        raise FeedPostNotFoundError(f"Post with {field} {value} not found")
 
     async def get_list(
         self,

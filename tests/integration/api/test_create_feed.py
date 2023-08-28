@@ -1,11 +1,13 @@
 from datetime import timedelta
 
 import pytest
+import pytest_asyncio
 import sqlalchemy as sa
 from dateutil.parser import isoparse
 from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette.testclient import TestClient
 
+from awesome_rss_reader.core.entity.feed import Feed
 from awesome_rss_reader.core.entity.feed_refresh_job import FeedRefreshJobState, NewFeedRefreshJob
 from awesome_rss_reader.core.entity.user import User
 from awesome_rss_reader.data.postgres import models as mdl
@@ -18,6 +20,14 @@ from tests.pytest_fixtures.types import (
     InsertRefreshJobsFixtureT,
     InsertUserFeedsFixtureT,
 )
+
+
+@pytest_asyncio.fixture()
+async def feed(insert_feeds: InsertFeedsFixtureT) -> Feed:
+    feed, *_ = await insert_feeds(
+        NewFeedFactory.build(url="https://example.com/feed.xml"),
+    )
+    return feed
 
 
 async def test_create_feed_happy_path(
@@ -65,14 +75,11 @@ async def test_create_feed_already_exists(
     postgres_database: AsyncEngine,
     user: User,
     user_api_client: TestClient,
-    insert_feeds: InsertFeedsFixtureT,
     insert_refresh_jobs: InsertRefreshJobsFixtureT,
     fetchone: FetchOneFixtureT,
+    feed: Feed,
     job_exists: bool,
 ) -> None:
-    feed, *_ = await insert_feeds(
-        NewFeedFactory.build(url="https://example.com/feed.xml"),
-    )
     # feeds always come with a refresh job, and we never delete the latter,
     # but we need to test the case when the refresh job is missing, just in case
     if job_exists:
@@ -103,14 +110,11 @@ async def test_create_feed_user_feed_already_exists(
     postgres_database: AsyncEngine,
     user: User,
     user_api_client: TestClient,
-    insert_feeds: InsertFeedsFixtureT,
+    feed: Feed,
     insert_user_feeds: InsertUserFeedsFixtureT,
     fetchone: FetchOneFixtureT,
     fetchmany: FetchManyFixtureT,
 ) -> None:
-    feed, *_ = await insert_feeds(
-        NewFeedFactory.build(url="https://example.com/feed.xml"),
-    )
     user_feed, *_ = await insert_user_feeds(
         NewUserFeedFactory.build(
             user_uid=user.uid,
@@ -146,9 +150,9 @@ async def test_create_feed_user_feed_already_exists(
 async def test_create_feed_refresh_job_already_exists(
     postgres_database: AsyncEngine,
     user_api_client: TestClient,
-    insert_feeds: InsertFeedsFixtureT,
     insert_refresh_jobs: InsertRefreshJobsFixtureT,
     fetchmany: FetchManyFixtureT,
+    feed: Feed,
     current_state: FeedRefreshJobState,
     new_state: FeedRefreshJobState,
     job_is_reset: bool,
@@ -156,9 +160,6 @@ async def test_create_feed_refresh_job_already_exists(
     now = now_aware()
     future = now + timedelta(hours=1)
 
-    feed, *_ = await insert_feeds(
-        NewFeedFactory.build(url="https://example.com/feed.xml"),
-    )
     refresh_job, *_ = await insert_refresh_jobs(
         NewFeedRefreshJobFactory.build(
             feed_id=feed.id,

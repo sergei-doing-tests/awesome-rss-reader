@@ -33,7 +33,7 @@ async def test_unfollow_feed_happy_path(
     uc.execute.assert_called_once_with(UnfollowFeedInput(user_uid=user.uid, feed_id=1))
 
 
-async def test_unfollow_feed_feed_does_not_exist(
+async def test_unfollowed_feed_does_not_exist(
     user: User,
     user_api_client: TestClient,
     uc: mock.Mock,

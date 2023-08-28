@@ -8,6 +8,7 @@ import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from awesome_rss_reader.core.entity.feed_post import FeedPostFiltering, FeedPostOrdering
+from awesome_rss_reader.core.repository.feed_post import FeedPostNotFoundError
 from awesome_rss_reader.data.postgres.repositories.feed_posts import PostgresFeedPostRepository
 from awesome_rss_reader.utils.dtime import now_aware
 from tests.factories import (
@@ -28,6 +29,66 @@ from tests.pytest_fixtures.types import (
 @pytest_asyncio.fixture()
 async def repo(db: AsyncEngine) -> PostgresFeedPostRepository:
     return PostgresFeedPostRepository(db=db)
+
+
+async def test_get_by_id(
+    repo: PostgresFeedPostRepository,
+    insert_feeds: InsertFeedsFixtureT,
+    insert_feed_posts: InsertFeedPostsFixtureT,
+) -> None:
+    feed, *_ = await insert_feeds(NewFeedFactory.build())
+
+    post1, post2 = await insert_feed_posts(
+        NewFeedPostFactory.build(
+            feed_id=feed.id,
+            title="The Best High DPI Gaming Mice",
+            guid="https://www.makeuseof.com/best-high-dpi-gaming-mice/",
+        ),
+        NewFeedPostFactory.build(
+            feed_id=feed.id,
+            title="Can ChatGPT Transform Healthcare?",
+            guid="https://www.makeuseof.com/can-chatgpt-transform-healthcare/",
+        ),
+    )
+
+    post = await repo.get_by_id(post1.id)
+    assert post.title == "The Best High DPI Gaming Mice"
+
+    post = await repo.get_by_id(post2.id)
+    assert post.title == "Can ChatGPT Transform Healthcare?"
+
+    with pytest.raises(FeedPostNotFoundError):
+        await repo.get_by_id(99999)
+
+
+async def test_get_by_guid(
+    repo: PostgresFeedPostRepository,
+    insert_feeds: InsertFeedsFixtureT,
+    insert_feed_posts: InsertFeedPostsFixtureT,
+) -> None:
+    feed, *_ = await insert_feeds(NewFeedFactory.build())
+
+    post1, post2 = await insert_feed_posts(
+        NewFeedPostFactory.build(
+            feed_id=feed.id,
+            title="The Best High DPI Gaming Mice",
+            guid="https://www.makeuseof.com/best-high-dpi-gaming-mice/",
+        ),
+        NewFeedPostFactory.build(
+            feed_id=feed.id,
+            title="Can ChatGPT Transform Healthcare?",
+            guid="https://www.makeuseof.com/can-chatgpt-transform-healthcare/",
+        ),
+    )
+
+    post = await repo.get_by_guid(post1.guid)
+    assert post.title == "The Best High DPI Gaming Mice"
+
+    post = await repo.get_by_guid(post2.guid)
+    assert post.title == "Can ChatGPT Transform Healthcare?"
+
+    with pytest.raises(FeedPostNotFoundError):
+        await repo.get_by_guid("https://www.makeuseof.com/not-existing/")
 
 
 @pytest.mark.parametrize(

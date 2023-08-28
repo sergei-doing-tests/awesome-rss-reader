@@ -1,7 +1,9 @@
+import pytest_asyncio
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncEngine
 from starlette.testclient import TestClient
 
+from awesome_rss_reader.core.entity.feed import Feed
 from awesome_rss_reader.core.entity.user import User
 from awesome_rss_reader.data.postgres import models as mdl
 from tests.factories import NewFeedFactory, NewUserFeedFactory
@@ -10,6 +12,14 @@ from tests.pytest_fixtures.types import (
     InsertFeedsFixtureT,
     InsertUserFeedsFixtureT,
 )
+
+
+@pytest_asyncio.fixture()
+async def feed(insert_feeds: InsertFeedsFixtureT) -> Feed:
+    feed, *_ = await insert_feeds(
+        NewFeedFactory.build(url="https://example.com/feed.xml"),
+    )
+    return feed
 
 
 async def test_follow_feed_happy_path(
@@ -42,13 +52,10 @@ async def test_follow_feed_already_following(
     postgres_database: AsyncEngine,
     user: User,
     user_api_client: TestClient,
-    insert_feeds: InsertFeedsFixtureT,
+    feed: Feed,
     insert_user_feeds: InsertUserFeedsFixtureT,
     fetchmany: FetchManyFixtureT,
 ) -> None:
-    feed, *_ = await insert_feeds(
-        NewFeedFactory.build(url="https://example.com/feed.xml"),
-    )
     user_feed, *_ = await insert_user_feeds(
         NewUserFeedFactory.build(
             feed_id=feed.id,
@@ -71,7 +78,7 @@ async def test_follow_feed_already_following(
     assert db_row["created_at"] == user_feed.created_at
 
 
-async def test_follow_feed_feed_does_not_exist(
+async def test_followed_feed_does_not_exist(
     postgres_database: AsyncEngine,
     user_api_client: TestClient,
 ) -> None:
@@ -83,12 +90,8 @@ async def test_follow_feed_feed_does_not_exist(
 async def test_follow_feed_requires_auth(
     postgres_database: AsyncEngine,
     api_client: TestClient,
-    insert_feeds: InsertFeedsFixtureT,
+    feed: Feed,
 ) -> None:
-    feed, *_ = await insert_feeds(
-        NewFeedFactory.build(url="https://example.com/feed.xml"),
-    )
-
     resp = api_client.put(f"/api/feeds/{feed.id}/follow")
     assert resp.status_code == 401
     assert resp.json() == {"detail": "Not authenticated"}
