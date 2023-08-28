@@ -2,6 +2,10 @@
 {{- .Release.Name | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
+{{- define "awesome-rss-reader.podname" -}}
+{{- printf "%s-%s" .Release.Name .Name | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
 {{- define "awesome-rss-reader.selectorLabels" -}}
 {{ include "awesome-rss-reader.releaseLabels" . }}
 {{- end }}

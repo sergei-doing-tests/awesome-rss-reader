@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "awesome-rss-reader.fullname" . }}
+  name: {{ include "awesome-rss-reader.podname" (set . "Name" "api") }}
   labels:
     {{- include "awesome-rss-reader.labels" . | nindent 4 }}
 spec:
@@ -25,7 +25,7 @@ spec:
       {{- end }}
       terminationGracePeriodSeconds: {{ .Values.uvicorn.terminationGracePeriodSeconds }}
       containers:
-        - name: {{ include "awesome-rss-reader.fullname" . }}
+        - name: {{ include "awesome-rss-reader.podname" (set . "Name" "api") }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args: [api]
