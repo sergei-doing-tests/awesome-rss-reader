@@ -28,6 +28,8 @@ spec:
         - name: {{ include "awesome-rss-reader.fullname" . }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - api
           ports:
             - name: uvicorn
               containerPort: {{ .Values.uvicorn.targetPort }}
