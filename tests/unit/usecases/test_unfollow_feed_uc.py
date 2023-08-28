@@ -72,8 +72,8 @@ async def test_user_feed_not_found(
     uc: UnfollowFeedUseCase,
 ) -> None:
     user_uid = uuid.uuid4()
-
     feed = FeedFactory.build()
+
     feed_repository.get_by_id.return_value = feed
     user_feed_repository.get_for_user_and_feed.side_effect = user_feed_repo.UserFeedNotFoundError
 

@@ -26,8 +26,6 @@ logger = structlog.get_logger()
 class _RefreshJobAlreadyExistsError(Exception):
     """Internal exception to handle unique constraint conflicts."""
 
-    ...
-
 
 class PostgresFeedRefreshJobRepository(BasePostgresRepository, FeedRefreshJobRepository):
     async def get_by_id(self, job_id: int) -> FeedRefreshJob:

@@ -5,7 +5,7 @@ from polyfactory import Use
 from polyfactory.factories.pydantic_factory import ModelFactory
 
 from awesome_rss_reader.core.entity.feed import Feed, NewFeed
-from awesome_rss_reader.core.entity.feed_post import FeedPost, NewFeedPost, NewUserPost
+from awesome_rss_reader.core.entity.feed_post import FeedPost, NewFeedPost
 from awesome_rss_reader.core.entity.feed_refresh_job import (
     FeedRefreshJob,
     FeedRefreshJobState,
@@ -13,6 +13,7 @@ from awesome_rss_reader.core.entity.feed_refresh_job import (
 )
 from awesome_rss_reader.core.entity.user import User
 from awesome_rss_reader.core.entity.user_feed import NewUserFeed, UserFeed
+from awesome_rss_reader.core.entity.user_post import NewUserPost, UserPost
 from awesome_rss_reader.utils import dtime
 
 faker = Faker()
@@ -83,8 +84,8 @@ class NewUserPostFactory(ModelFactory[NewUserPost]):
     read_at = Use(dtime.now_aware)
 
 
-class UserPostFactory(ModelFactory[NewUserPost]):
-    __model__ = NewUserPost
+class UserPostFactory(ModelFactory[UserPost]):
+    __model__ = UserPost
 
     id = faker.pyint()  # noqa: A003
     user_uid = faker.uuid4()

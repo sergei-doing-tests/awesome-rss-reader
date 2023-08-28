@@ -3,7 +3,15 @@ from abc import ABC, abstractmethod
 from awesome_rss_reader.core.entity.feed_post import FeedPost, FeedPostFiltering, FeedPostOrdering
 
 
+class PostNotFoundError(Exception):
+    ...
+
+
 class FeedPostRepository(ABC):
+    @abstractmethod
+    async def get_by_id(self, post_id: int) -> FeedPost:
+        ...
+
     @abstractmethod
     async def get_list(
         self,

@@ -76,7 +76,6 @@ async def test_happy_path(
     return_value=datetime(2006, 1, 2, 15, 4, 5, 999999, tzinfo=UTC),
 )
 async def test_refresh_job_for_existing_feeds(
-    now_aware_mock: mock.Mock,
     container: Container,
     feed_repository: mock.Mock,
     user_feed_repository: mock.Mock,

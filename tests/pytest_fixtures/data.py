@@ -3,9 +3,10 @@ import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from awesome_rss_reader.core.entity.feed import Feed, NewFeed
-from awesome_rss_reader.core.entity.feed_post import FeedPost, NewFeedPost, NewUserPost, UserPost
+from awesome_rss_reader.core.entity.feed_post import FeedPost, NewFeedPost
 from awesome_rss_reader.core.entity.feed_refresh_job import FeedRefreshJob, NewFeedRefreshJob
 from awesome_rss_reader.core.entity.user_feed import NewUserFeed, UserFeed
+from awesome_rss_reader.core.entity.user_post import NewUserPost, UserPost
 from awesome_rss_reader.data.postgres import models as mdl
 
 from .types import (

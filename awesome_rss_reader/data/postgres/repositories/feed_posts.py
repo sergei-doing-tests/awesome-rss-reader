@@ -8,6 +8,7 @@ from awesome_rss_reader.core.entity.feed_post import FeedPost, FeedPostFiltering
 from awesome_rss_reader.core.repository.feed_post import FeedPostRepository
 from awesome_rss_reader.data.postgres import models as mdl
 from awesome_rss_reader.data.postgres.repositories.base import BasePostgresRepository
+from tests.factories import FeedPostFactory
 
 logger = structlog.get_logger()
 
@@ -23,6 +24,9 @@ class _PostReadStatus(Enum):
 
 
 class PostgresFeedPostRepository(BasePostgresRepository, FeedPostRepository):
+    async def get_by_id(self, post_id: int) -> FeedPost:
+        return FeedPostFactory.build()
+
     async def get_list(
         self,
         *,

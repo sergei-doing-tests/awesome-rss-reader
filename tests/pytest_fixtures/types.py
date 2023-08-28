@@ -5,9 +5,10 @@ import sqlalchemy as sa
 from mypy_extensions import VarArg
 
 from awesome_rss_reader.core.entity.feed import Feed, NewFeed
-from awesome_rss_reader.core.entity.feed_post import FeedPost, NewFeedPost, NewUserPost, UserPost
+from awesome_rss_reader.core.entity.feed_post import FeedPost, NewFeedPost
 from awesome_rss_reader.core.entity.feed_refresh_job import FeedRefreshJob, NewFeedRefreshJob
 from awesome_rss_reader.core.entity.user_feed import NewUserFeed, UserFeed
+from awesome_rss_reader.core.entity.user_post import NewUserPost, UserPost
 
 # fmt: off
 FetchOneFixtureT: TypeAlias = Callable[[sa.Select], Awaitable[dict[str, Any]]]

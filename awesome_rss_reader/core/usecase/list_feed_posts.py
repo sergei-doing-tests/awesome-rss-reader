@@ -43,6 +43,7 @@ class ListFeedPostsUseCase(BaseUseCase):
             followed_by=data.followed_by,
             not_followed_by=data.not_followed_by,
             read_by=data.read_by,
+            not_read_by=data.not_read_by,
         )
         posts = await self.post_repository.get_list(
             order_by=FeedPostOrdering.published_at_desc,

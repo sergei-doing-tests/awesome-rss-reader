@@ -20,16 +20,6 @@ class FeedPost(NewFeedPost):
     created_at: AwareDatetime
 
 
-class NewUserPost(BaseModel):
-    user_uid: uuid.UUID
-    post_id: int
-    read_at: AwareDatetime
-
-
-class UserPost(NewUserPost):
-    id: int  # noqa: A003
-
-
 class FeedPostFiltering(BaseModel):
     feed_id: int | None = None
     followed_by: uuid.UUID | None = None

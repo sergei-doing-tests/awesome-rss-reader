@@ -131,3 +131,17 @@ async def test_get_user_followed_feeds_pagination(
     feed_titles = [feed["title"] for feed in resp_json]
 
     assert feed_titles == expected_titles
+
+
+async def test_list_user_followed_feeds_requires_auth(
+    postgres_database: AsyncEngine,
+    api_client: TestClient,
+    insert_feeds: InsertFeedsFixtureT,
+) -> None:
+    feed, *_ = await insert_feeds(
+        NewFeedFactory.build(url="https://example.com/feed.xml"),
+    )
+
+    resp = api_client.get("/api/feeds")
+    assert resp.status_code == 401
+    assert resp.json() == {"detail": "Not authenticated"}

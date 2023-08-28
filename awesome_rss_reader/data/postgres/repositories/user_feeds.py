@@ -17,7 +17,7 @@ from awesome_rss_reader.data.postgres.repositories.base import BasePostgresRepos
 logger = structlog.get_logger()
 
 
-class UserFeedAlreadyExistsError(Exception):
+class _UserFeedAlreadyExistsError(Exception):
     ...
 
 
@@ -63,7 +63,7 @@ class PostgresUserFeedRepository(BasePostgresRepository, UserFeedRepository):
 
         try:
             return await self._maybe_create(new_user_feed)
-        except UserFeedAlreadyExistsError:
+        except _UserFeedAlreadyExistsError:
             return await self.get_for_user_and_feed(
                 user_uid=new_user_feed.user_uid,
                 feed_id=new_user_feed.feed_id,
@@ -94,7 +94,7 @@ class PostgresUserFeedRepository(BasePostgresRepository, UserFeedRepository):
             case ForeignKeyViolationError():
                 raise UserFeedNoFeedError("Referenced feed does not exist") from ie
             case UniqueViolationError():
-                raise UserFeedAlreadyExistsError("User feed already exists") from ie
+                raise _UserFeedAlreadyExistsError("User feed already exists") from ie
             case _:
                 raise ie
 

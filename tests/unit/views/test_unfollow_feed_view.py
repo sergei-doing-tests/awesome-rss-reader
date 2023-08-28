@@ -10,7 +10,6 @@ from awesome_rss_reader.core.usecase.unfollow_feed import (
     UnfollowFeedInput,
     UnfollowFeedUseCase,
 )
-from tests.factories import UserFeedFactory
 
 
 @pytest.fixture()
@@ -26,11 +25,7 @@ async def test_unfollow_feed_happy_path(
     user_api_client: TestClient,
     uc: mock.Mock,
 ) -> None:
-    user_feed = UserFeedFactory.build(
-        user_uid=user.uid,
-        feed_id=1,
-    )
-    uc.execute.return_value = user_feed
+    uc.execute.return_value = None
 
     resp = user_api_client.delete("/api/feeds/1/unfollow")
     assert resp.status_code == 204

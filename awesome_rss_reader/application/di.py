@@ -7,8 +7,10 @@ from awesome_rss_reader.core.usecase.create_feed import CreateFeedUseCase
 from awesome_rss_reader.core.usecase.follow_feed import FollowFeedUseCase
 from awesome_rss_reader.core.usecase.list_feed_posts import ListFeedPostsUseCase
 from awesome_rss_reader.core.usecase.list_user_feeds import ListUserFollowedFeedsUseCase
+from awesome_rss_reader.core.usecase.read_post import ReadPostUseCase
 from awesome_rss_reader.core.usecase.refresh_feed import RefreshFeedUseCase
 from awesome_rss_reader.core.usecase.unfollow_feed import UnfollowFeedUseCase
+from awesome_rss_reader.core.usecase.unread_post import UnreadPostUseCase
 from awesome_rss_reader.data.noop.users import NoopUserRepository
 from awesome_rss_reader.data.postgres.database import (
     PostgresSettings,
@@ -23,6 +25,7 @@ from awesome_rss_reader.data.postgres.repositories.feeds import PostgresFeedRepo
 from awesome_rss_reader.data.postgres.repositories.user_feeds import (
     PostgresUserFeedRepository,
 )
+from awesome_rss_reader.data.postgres.repositories.user_posts import PostgresUserPostRepository
 
 
 class Settings(containers.DeclarativeContainer):
@@ -46,6 +49,7 @@ class Repositories(containers.DeclarativeContainer):
     user_feeds = providers.Singleton(PostgresUserFeedRepository, db=database.engine)
     feed_refresh_jobs = providers.Singleton(PostgresFeedRefreshJobRepository, db=database.engine)
     feed_posts = providers.Singleton(PostgresFeedPostRepository, db=database.engine)
+    user_posts = providers.Singleton(PostgresUserPostRepository, db=database.engine)
 
 
 class UseCases(containers.DeclarativeContainer):
@@ -89,6 +93,16 @@ class UseCases(containers.DeclarativeContainer):
     list_feed_posts = providers.Factory(
         ListFeedPostsUseCase,
         post_repository=repositories.feed_posts,
+    )
+    read_post = providers.Factory(
+        ReadPostUseCase,
+        post_repository=repositories.feed_posts,
+        user_post_repository=repositories.user_posts,
+    )
+    unread_post = providers.Factory(
+        UnreadPostUseCase,
+        post_repository=repositories.feed_posts,
+        user_post_repository=repositories.user_posts,
     )
 
 

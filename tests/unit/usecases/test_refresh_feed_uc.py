@@ -33,7 +33,6 @@ def uc(
     return_value=datetime(2006, 1, 2, 15, 4, 5, 999999, tzinfo=UTC),
 )
 async def test_happy_path(
-    now_aware_mock: mock.Mock,
     container: Container,
     feed_repository: mock.Mock,
     job_repository: mock.Mock,

@@ -17,7 +17,7 @@ from awesome_rss_reader.data.postgres.repositories.base import BasePostgresRepos
 logger = structlog.get_logger()
 
 
-class _UserFeedAlreadyExistsError(Exception):
+class _FeedAlreadyExistsError(Exception):
     """This an internal exception used for conflict handling."""
 
 
@@ -47,7 +47,7 @@ class PostgresFeedRepository(BasePostgresRepository, FeedRepository):
 
         try:
             return await self._maybe_create(new_feed)
-        except _UserFeedAlreadyExistsError:
+        except _FeedAlreadyExistsError:
             # a feed with the same url may have been created in the meantime
             return await self.get_by_url(new_feed.url)
 
@@ -69,7 +69,7 @@ class PostgresFeedRepository(BasePostgresRepository, FeedRepository):
     def _handle_integrity_error_on_create(self, ie: IntegrityError) -> None:
         match ie.orig.__cause__:  # type: ignore[union-attr]
             case UniqueViolationError():
-                raise _UserFeedAlreadyExistsError("Feed already exists") from ie
+                raise _FeedAlreadyExistsError("Feed already exists") from ie
             case _:
                 raise ie
 
