@@ -44,7 +44,7 @@ envFromSecrets:
 readinessProbe:
   httpGet:
     path: /info
-    port: app
+    port: uvicorn
   periodSeconds: 10
   initialDelaySeconds: 10
   timeoutSeconds: 5
@@ -53,7 +53,7 @@ readinessProbe:
 livenessProbe:
   httpGet:
     path: /info
-    port: app
+    port: uvicorn
   periodSeconds: 30
   initialDelaySeconds: 10
   timeoutSeconds: 5

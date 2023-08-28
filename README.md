@@ -6,6 +6,8 @@
 [![codecov][codecov-img]][codecov]
 [![ci][ci-img]][ci]
 
+## API documentation
+For actual API documentation, please refer to the [swagger][swagger] at [arr.khoroshilov.tech](https://arr.khoroshilov.tech/).
 
 ## Getting started
 
@@ -77,3 +79,5 @@ Released under the [MIT License](LICENSE.txt).
 
 [ci-img]: http://github.com/sergei-doing-tests/awesome-rss-reader/actions/workflows/ci.yml/badge.svg?branch=main
 [ci]: http://github.com/sergei-doing-tests/awesome-rss-reader/actions/workflows/ci.yml
+
+[swagger]: https://arr.khoroshilov.tech/docs
