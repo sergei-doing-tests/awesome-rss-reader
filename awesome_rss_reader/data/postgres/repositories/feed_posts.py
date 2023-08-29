@@ -4,8 +4,14 @@ from typing import Any
 
 import sqlalchemy as sa
 import structlog
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-from awesome_rss_reader.core.entity.feed_post import FeedPost, FeedPostFiltering, FeedPostOrdering
+from awesome_rss_reader.core.entity.feed_post import (
+    FeedPost,
+    FeedPostFiltering,
+    FeedPostOrdering,
+    NewFeedPost,
+)
 from awesome_rss_reader.core.repository.feed_post import FeedPostNotFoundError, FeedPostRepository
 from awesome_rss_reader.data.postgres import models as mdl
 from awesome_rss_reader.data.postgres.repositories.base import BasePostgresRepository
@@ -40,6 +46,19 @@ class PostgresFeedPostRepository(BasePostgresRepository, FeedPostRepository):
                 return FeedPost.model_validate(dict(row))
 
         raise FeedPostNotFoundError(f"Post with {field} {value} not found")
+
+    async def create_many(self, posts: list[NewFeedPost]) -> list[FeedPost]:
+        insert_q = (
+            pg_insert(mdl.FeedPost)
+            .values([post.model_dump() for post in posts])
+            .on_conflict_do_nothing(constraint="feed_post_feed_id_guid_key")
+            .returning(mdl.FeedPost)
+        )
+
+        async with self.db.begin() as conn:
+            result = await conn.execute(insert_q)
+
+        return [FeedPost.model_validate(dict(row)) for row in result.mappings()]
 
     async def get_list(
         self,

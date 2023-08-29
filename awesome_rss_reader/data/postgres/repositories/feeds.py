@@ -1,12 +1,17 @@
 from typing import Any
-from uuid import UUID
 
 import sqlalchemy as sa
 import structlog
 from asyncpg import UniqueViolationError
 from sqlalchemy.exc import IntegrityError
 
-from awesome_rss_reader.core.entity.feed import Feed, FeedOrdering, NewFeed
+from awesome_rss_reader.core.entity.feed import (
+    Feed,
+    FeedFiltering,
+    FeedOrdering,
+    FeedUpdates,
+    NewFeed,
+)
 from awesome_rss_reader.core.repository.feed import (
     FeedNotFoundError,
     FeedRepository,
@@ -76,30 +81,21 @@ class PostgresFeedRepository(BasePostgresRepository, FeedRepository):
     async def get_list(
         self,
         *,
-        followed_by: UUID | None = None,
+        filter_by: FeedFiltering | None = None,
         order_by: FeedOrdering = FeedOrdering.id_asc,
         limit: int,
         offset: int,
     ) -> list[Feed]:
         query = sa.select(mdl.Feed)
 
-        if followed_by is not None:
-            # fmt: off
-            query = (
-                query
-                .select_from(
-                    mdl.Feed
-                    .join(mdl.UserFeed, mdl.UserFeed.c.feed_id == mdl.Feed.c.id)
-                )
-                .where(mdl.UserFeed.c.user_uid == followed_by)
-            )
-            # fmt: on
+        if filter_by:
+            query = self._apply_filtering(query, filter_by)
 
         match order_by:
             case FeedOrdering.id_asc:
                 query = query.order_by(mdl.Feed.c.id.asc())
-            case FeedOrdering.refreshed_at_desc:
-                query = query.order_by(mdl.Feed.c.refreshed_at.desc(), mdl.Feed.c.id.desc())
+            case FeedOrdering.published_at_desc:
+                query = query.order_by(mdl.Feed.c.published_at.desc(), mdl.Feed.c.id.desc())
             case _:
                 raise ValueError(f"Unknown feed ordering: {order_by}")
 
@@ -109,3 +105,37 @@ class PostgresFeedRepository(BasePostgresRepository, FeedRepository):
             result = await conn.execute(query)
 
         return [Feed.model_validate(dict(row)) for row in result.mappings()]
+
+    def _apply_filtering(self, query: sa.Select, filter_by: FeedFiltering) -> sa.Select:
+        if filter_by.ids:
+            query = query.where(mdl.Feed.c.id.in_(filter_by.ids))
+
+        if filter_by.followed_by:
+            # fmt: off
+            query = (
+                query
+                .select_from(
+                    mdl.Feed
+                    .join(mdl.UserFeed, mdl.UserFeed.c.feed_id == mdl.Feed.c.id)
+                )
+                .where(mdl.UserFeed.c.user_uid == filter_by.followed_by)
+            )
+            # fmt: on
+
+        return query
+
+    async def update(self, *, feed_id: int, updates: FeedUpdates) -> Feed:
+        update_q = (
+            sa.update(mdl.Feed)
+            .where(mdl.Feed.c.id == feed_id)
+            .values(**updates.model_dump(exclude_unset=True))
+            .returning(mdl.Feed)
+        )
+
+        async with self.db.begin() as conn:
+            result = await conn.execute(update_q)
+
+            if row := result.mappings().fetchone():
+                return Feed.model_validate(dict(row))
+
+        raise FeedNotFoundError(f"Failed to update feed with {feed_id=}")

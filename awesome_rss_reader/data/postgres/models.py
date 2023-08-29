@@ -9,7 +9,7 @@ Feed = sa.Table(
     sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
     sa.Column("url", sa.Text, nullable=False),
     sa.Column("title", sa.Text, nullable=True),
-    sa.Column("refreshed_at", sa.DateTime(timezone=True), nullable=True),
+    sa.Column("published_at", sa.DateTime(timezone=True), nullable=True),
     sa.Column(
         "created_at",
         sa.DateTime(timezone=True),
@@ -75,6 +75,12 @@ FeedRefreshJob = sa.Table(
     sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
     sa.Column("feed_id", sa.Integer, nullable=False),
     sa.Column("state", sa.Integer, nullable=False),
+    sa.Column(
+        "state_changed_at",
+        sa.DateTime(timezone=True),
+        nullable=False,
+        server_default=sa.func.now(),
+    ),
     sa.Column("execute_after", sa.DateTime(timezone=True), nullable=False),
     sa.Column("retries", sa.Integer, nullable=False, server_default="0"),
     sa.Column(

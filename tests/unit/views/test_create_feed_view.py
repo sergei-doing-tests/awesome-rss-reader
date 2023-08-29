@@ -31,7 +31,7 @@ async def test_create_feed_happy_path(
         id=1,
         url="https://example.com/feed.xml",
         title="Example Feed",
-        refreshed_at=None,
+        published_at=None,
         created_at=datetime(2006, 1, 2, 15, 4, 5, 999999, tzinfo=UTC),
     )
     uc.execute.return_value = CreateFeedOutput(feed=feed)
@@ -46,7 +46,7 @@ async def test_create_feed_happy_path(
         "url": "https://example.com/feed.xml",
         "title": "Example Feed",
         "created_at": "2006-01-02T15:04:05.999999Z",
-        "refreshed_at": None,
+        "published_at": None,
     }
 
     uc.execute.assert_called_once_with(
@@ -76,7 +76,7 @@ async def test_create_feed_valid_input(
         id=1,
         url=url,
         title="Example Feed",
-        refreshed_at=None,
+        published_at=None,
         created_at=datetime(2006, 1, 2, 15, 4, 5, 999999, tzinfo=UTC),
     )
     uc.execute.return_value = CreateFeedOutput(feed=feed)

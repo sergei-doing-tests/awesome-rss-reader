@@ -26,7 +26,7 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("url", sa.Text(), nullable=False),
         sa.Column("title", sa.Text(), nullable=True),
-        sa.Column("refreshed_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("published_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),

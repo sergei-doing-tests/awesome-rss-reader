@@ -37,11 +37,11 @@ async def test_list_user_followed_feeds(
     user2 = UserFactory.build(uid=uuid.UUID("decade00-0000-4000-a000-000000000000"))
 
     feeds = [
-        NewFeedFactory.build(title="Feed 1", refreshed_at=now),
-        NewFeedFactory.build(title="Feed 2", refreshed_at=now - timedelta(hours=6)),
-        NewFeedFactory.build(title="Feed 3", refreshed_at=now - timedelta(hours=1)),
-        NewFeedFactory.build(title="Feed 4", refreshed_at=now - timedelta(hours=24)),
-        NewFeedFactory.build(title="Feed 5", refreshed_at=now),
+        NewFeedFactory.build(title="Feed 1", published_at=now),
+        NewFeedFactory.build(title="Feed 2", published_at=now - timedelta(hours=6)),
+        NewFeedFactory.build(title="Feed 3", published_at=now - timedelta(hours=1)),
+        NewFeedFactory.build(title="Feed 4", published_at=now - timedelta(hours=24)),
+        NewFeedFactory.build(title="Feed 5", published_at=now),
     ]
     feed1, feed2, feed3, feed4, feed5 = await insert_feeds(*feeds)
 
@@ -107,11 +107,11 @@ async def test_get_user_followed_feeds_pagination(
     now = now_aware()
 
     feeds = [
-        NewFeedFactory.build(title="Feed 1", refreshed_at=now),
-        NewFeedFactory.build(title="Feed 2", refreshed_at=now - timedelta(hours=6)),
-        NewFeedFactory.build(title="Feed 3", refreshed_at=now - timedelta(hours=1)),
-        NewFeedFactory.build(title="Feed 4", refreshed_at=now - timedelta(hours=24)),
-        NewFeedFactory.build(title="Feed 5", refreshed_at=now),
+        NewFeedFactory.build(title="Feed 1", published_at=now),
+        NewFeedFactory.build(title="Feed 2", published_at=now - timedelta(hours=6)),
+        NewFeedFactory.build(title="Feed 3", published_at=now - timedelta(hours=1)),
+        NewFeedFactory.build(title="Feed 4", published_at=now - timedelta(hours=24)),
+        NewFeedFactory.build(title="Feed 5", published_at=now),
     ]
     feed1, feed2, feed3, feed4, feed5 = await insert_feeds(*feeds)
 

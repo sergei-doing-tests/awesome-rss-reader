@@ -5,10 +5,13 @@ from typing import Optional
 
 import pytest
 import pytest_asyncio
+import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from awesome_rss_reader.core.entity.feed import Feed
 from awesome_rss_reader.core.entity.feed_post import FeedPostFiltering, FeedPostOrdering
 from awesome_rss_reader.core.repository.feed_post import FeedPostNotFoundError
+from awesome_rss_reader.data.postgres import models as mdl
 from awesome_rss_reader.data.postgres.repositories.feed_posts import PostgresFeedPostRepository
 from awesome_rss_reader.utils.dtime import now_aware
 from tests.factories import (
@@ -19,6 +22,7 @@ from tests.factories import (
     UserFactory,
 )
 from tests.pytest_fixtures.types import (
+    FetchManyFixtureT,
     InsertFeedPostsFixtureT,
     InsertFeedsFixtureT,
     InsertUserFeedsFixtureT,
@@ -31,13 +35,17 @@ async def repo(db: AsyncEngine) -> PostgresFeedPostRepository:
     return PostgresFeedPostRepository(db=db)
 
 
+@pytest_asyncio.fixture()
+async def feed(insert_feeds: InsertFeedsFixtureT) -> Feed:
+    feed, *_ = await insert_feeds(NewFeedFactory.build())
+    return feed
+
+
 async def test_get_by_id(
     repo: PostgresFeedPostRepository,
-    insert_feeds: InsertFeedsFixtureT,
     insert_feed_posts: InsertFeedPostsFixtureT,
+    feed: Feed,
 ) -> None:
-    feed, *_ = await insert_feeds(NewFeedFactory.build())
-
     post1, post2 = await insert_feed_posts(
         NewFeedPostFactory.build(
             feed_id=feed.id,
@@ -63,11 +71,9 @@ async def test_get_by_id(
 
 async def test_get_by_guid(
     repo: PostgresFeedPostRepository,
-    insert_feeds: InsertFeedsFixtureT,
     insert_feed_posts: InsertFeedPostsFixtureT,
+    feed: Feed,
 ) -> None:
-    feed, *_ = await insert_feeds(NewFeedFactory.build())
-
     post1, post2 = await insert_feed_posts(
         NewFeedPostFactory.build(
             feed_id=feed.id,
@@ -444,3 +450,70 @@ async def test_get_list(
         offset=offset,
     )
     assert [post.title for post in posts] == expected_titles
+
+
+async def test_create_many(
+    repo: PostgresFeedPostRepository,
+    insert_feeds: InsertFeedsFixtureT,
+    insert_feed_posts: InsertFeedPostsFixtureT,
+    fetchmany: FetchManyFixtureT,
+) -> None:
+    feed, other_feed = await insert_feeds(
+        NewFeedFactory.build(url="https://www.makeuseof.com/feed/"),
+        NewFeedFactory.build(url="https://feeds.simplecast.com/54nAGcIl"),
+    )
+
+    existing_posts = await insert_feed_posts(
+        NewFeedPostFactory.build(
+            title="The Best High DPI Gaming Mice",
+            feed_id=feed.id,
+            guid="https://www.makeuseof.com/best-high-dpi-gaming-mice/",
+        ),
+        NewFeedPostFactory.build(
+            title="Can ChatGPT Transform Healthcare?",
+            feed_id=feed.id,
+            guid="https://www.makeuseof.com/can-chatgpt-transform-healthcare/",
+        ),
+        NewFeedPostFactory.build(
+            title="4 Reasons to Buy the M2 Pro Mac mini",
+            feed_id=other_feed.id,
+            guid="https://www.makeuseof.com/reasons-to-buy-the-m2-pro-mac-mini/",
+        ),
+    )
+
+    created_posts = await repo.create_many(
+        [
+            NewFeedPostFactory.build(
+                feed_id=feed.id,
+                guid="https://www.makeuseof.com/can-chatgpt-transform-healthcare/",
+            ),
+            NewFeedPostFactory.build(
+                feed_id=other_feed.id,
+                guid="https://www.makeuseof.com/can-chatgpt-transform-healthcare/",
+            ),
+            NewFeedPostFactory.build(
+                feed_id=feed.id,
+                guid="https://www.makeuseof.com/best-high-dpi-gaming-mice/",
+            ),
+            NewFeedPostFactory.build(
+                feed_id=feed.id,
+                guid="https://www.makeuseof.com/wellness-practices-for-standing-desk-users/",
+            ),
+        ]
+    )
+    assert len(created_posts) == 2
+
+    new_db_rows = await fetchmany(
+        sa.select(mdl.FeedPost)
+        .where(~mdl.FeedPost.c.id.in_([p.id for p in existing_posts]))
+        .order_by(mdl.FeedPost.c.id.asc())
+    )
+    assert len(new_db_rows) == 2
+
+    new_db_row1, new_db_row2 = new_db_rows
+    assert new_db_row1["feed_id"] == other_feed.id
+    assert new_db_row1["guid"] == "https://www.makeuseof.com/can-chatgpt-transform-healthcare/"
+    # fmt: off
+    assert new_db_row2["feed_id"] == feed.id
+    assert new_db_row2["guid"] == "https://www.makeuseof.com/wellness-practices-for-standing-desk-users/"  # noqa: E501
+    # fmt: on

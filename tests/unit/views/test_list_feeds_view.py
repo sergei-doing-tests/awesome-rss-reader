@@ -32,14 +32,14 @@ async def test_list_feeds_happy_path(
             id=1,
             url="https://example.com/feed.xml",
             title=None,
-            refreshed_at=None,
+            published_at=None,
             created_at=datetime(2006, 1, 2, 15, 4, 5, 999999, tzinfo=UTC),
         ),
         FeedFactory.build(
             id=2,
             url="https://example.com/feed.rss",
             title="Example Feed",
-            refreshed_at=datetime(2006, 1, 2, 20, 20, 20, 999999, tzinfo=UTC),
+            published_at=datetime(2006, 1, 2, 20, 20, 20, 999999, tzinfo=UTC),
             created_at=datetime(2006, 1, 2, 15, 4, 5, 999999, tzinfo=UTC),
         ),
     ]
@@ -53,14 +53,14 @@ async def test_list_feeds_happy_path(
             "url": "https://example.com/feed.xml",
             "title": None,
             "created_at": "2006-01-02T15:04:05.999999Z",
-            "refreshed_at": None,
+            "published_at": None,
         },
         {
             "id": 2,
             "url": "https://example.com/feed.rss",
             "title": "Example Feed",
             "created_at": "2006-01-02T15:04:05.999999Z",
-            "refreshed_at": "2006-01-02T20:20:20.999999Z",
+            "published_at": "2006-01-02T20:20:20.999999Z",
         },
     ]
 
@@ -77,7 +77,7 @@ async def test_list_feeds_pagination(
             id=1,
             url="https://example.com/feed.xml",
             title=None,
-            refreshed_at=None,
+            published_at=None,
             created_at=datetime(2006, 1, 2, 15, 4, 5, 999999, tzinfo=UTC),
         ),
     ]
@@ -91,7 +91,7 @@ async def test_list_feeds_pagination(
             "url": "https://example.com/feed.xml",
             "title": None,
             "created_at": "2006-01-02T15:04:05.999999Z",
-            "refreshed_at": None,
+            "published_at": None,
         },
     ]
 

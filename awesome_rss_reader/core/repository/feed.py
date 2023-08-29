@@ -1,7 +1,12 @@
 from abc import ABC, abstractmethod
-from uuid import UUID
 
-from awesome_rss_reader.core.entity.feed import Feed, FeedOrdering, NewFeed
+from awesome_rss_reader.core.entity.feed import (
+    Feed,
+    FeedFiltering,
+    FeedOrdering,
+    FeedUpdates,
+    NewFeed,
+)
 
 
 class FeedNotFoundError(Exception):
@@ -25,9 +30,13 @@ class FeedRepository(ABC):
     async def get_list(
         self,
         *,
-        followed_by: UUID | None = None,
+        filter_by: FeedFiltering | None = None,
         order_by: FeedOrdering = FeedOrdering.id_asc,
         limit: int,
         offset: int,
     ) -> list[Feed]:
+        ...
+
+    @abstractmethod
+    async def update(self, *, feed_id: int, updates: FeedUpdates) -> Feed:
         ...

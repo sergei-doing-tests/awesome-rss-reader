@@ -24,7 +24,6 @@ def uc(
 
 
 async def test_happy_path(
-    container: Container,
     post_repository: mock.Mock,
     user_post_repository: mock.Mock,
     uc: UnreadPostUseCase,
@@ -48,7 +47,6 @@ async def test_happy_path(
 
 
 async def test_post_not_found(
-    container: Container,
     post_repository: mock.Mock,
     user_post_repository: mock.Mock,
     uc: UnreadPostUseCase,
@@ -65,7 +63,6 @@ async def test_post_not_found(
 
 
 async def test_user_post_not_found(
-    container: Container,
     post_repository: mock.Mock,
     user_post_repository: mock.Mock,
     uc: UnreadPostUseCase,

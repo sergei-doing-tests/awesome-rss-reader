@@ -12,7 +12,7 @@ class ApiFeed(BaseModel):
     id: int  # noqa: A003
     url: str
     title: str | None = None
-    refreshed_at: datetime | None = None
+    published_at: datetime | None = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

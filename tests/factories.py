@@ -23,7 +23,7 @@ class NewFeedFactory(ModelFactory[NewFeed]):
     __model__ = NewFeed
 
     title = faker.text(max_nb_chars=64)
-    refreshed_at = Use(dtime.now_aware)
+    published_at = Use(dtime.now_aware)
 
 
 class FeedFactory(ModelFactory[Feed]):
@@ -32,7 +32,7 @@ class FeedFactory(ModelFactory[Feed]):
     id = faker.pyint()  # noqa: A003
     url = faker.url()
     title = faker.text(max_nb_chars=64)
-    refreshed_at = Use(dtime.now_aware)
+    published_at = Use(dtime.now_aware)
     created_at = Use(dtime.now_aware)
 
 
@@ -110,6 +110,7 @@ class FeedRefreshJobFactory(ModelFactory[FeedRefreshJob]):
     state = FeedRefreshJobState.pending
     execute_after = Use(dtime.now_aware)
     retries = 0
+    state_changed_at = Use(dtime.now_aware)
     created_at = Use(dtime.now_aware)
     updated_at = Use(dtime.now_aware)
 

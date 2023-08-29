@@ -33,7 +33,7 @@ def uc(
     return_value=datetime(2006, 1, 2, 15, 4, 5, 999999, tzinfo=UTC),
 )
 async def test_happy_path(
-    container: Container,
+    now_aware_mock: mock.Mock,
     feed_repository: mock.Mock,
     job_repository: mock.Mock,
     uc: RefreshFeedUseCase,
@@ -81,7 +81,6 @@ async def test_happy_path(
     ],
 )
 async def test_skip_refresh_if_job_in_progress(
-    container: Container,
     feed_repository: mock.Mock,
     job_repository: mock.Mock,
     uc: RefreshFeedUseCase,
@@ -108,7 +107,6 @@ async def test_skip_refresh_if_job_in_progress(
 
 
 async def test_feed_not_found(
-    container: Container,
     feed_repository: mock.Mock,
     job_repository: mock.Mock,
     uc: RefreshFeedUseCase,
@@ -126,7 +124,6 @@ async def test_feed_not_found(
 
 
 async def test_state_transition_failed(
-    container: Container,
     feed_repository: mock.Mock,
     job_repository: mock.Mock,
     uc: RefreshFeedUseCase,

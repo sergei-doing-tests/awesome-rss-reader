@@ -1,34 +1,47 @@
+import asyncio
+
 import click
-import uvicorn
+
+from awesome_rss_reader.application import di
+from awesome_rss_reader.application.di import Container
+from awesome_rss_reader.core.usecase.schedule_feed_update import ScheduleFeedUpdateInput
 
 
-@click.command(context_settings={"auto_envvar_prefix": "API"})
-@click.option("--host", default="127.0.0.1", help="Host to run API server on")
-@click.option("--port", default=8000, type=click.INT, help="Port to run API server on")
+@click.command(context_settings={"auto_envvar_prefix": "SCHEDULER"})
 @click.option(
-    "--log-level",
-    default="info",
-    type=click.Choice(["debug", "info", "warning", "error", "critical"]),
+    "--interval",
+    default=30,
+    type=click.INT,
+    help="Define how often to run the job scheduler",
 )
 @click.option(
-    "--reload",
-    default=False,
-    is_flag=True,
-    help="Instruct uvicorn to reload on code changes",
+    "--concurrency",
+    default=20,
+    type=click.INT,
+    help="Define how much jobs to schedule at a time",
 )
-def api(
-    host: str,
-    port: int,
-    log_level: str,
-    reload: bool,  # noqa: FBT001
+def scheduler(
+    interval: int,
+    concurrency: int,
 ) -> None:
-    click.echo(f"Running API server on {host}:{port} with logging level={log_level}")
+    click.echo(f"Running scheduler with {interval=}s and {concurrency=}")
+    container = di.init()
+    asyncio.run(run(container, interval, concurrency))
 
-    uvicorn.run(
-        "awesome_rss_reader.fastapi.entrypoint:get_asgi_app",
-        factory=True,
-        host=host,
-        port=port,
-        log_level=log_level,
-        reload=reload,
-    )
+
+async def schedule_feed_update(container: Container, concurrency: int) -> None:
+    uc_input = ScheduleFeedUpdateInput(batch_size=concurrency)
+    uc = container.use_cases.schedule_feed_update()
+    await uc.execute(uc_input)
+
+
+async def run(
+    container: Container,
+    interval: int,
+    concurrency: int,
+) -> None:
+    while True:
+        await asyncio.gather(
+            schedule_feed_update(container, concurrency),
+            asyncio.sleep(interval),
+        )

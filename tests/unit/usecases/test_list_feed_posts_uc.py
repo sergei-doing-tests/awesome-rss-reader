@@ -92,7 +92,6 @@ def uc(container: Container, post_repository: mock.Mock) -> ListFeedPostsUseCase
     ],
 )
 async def test_happy_path(
-    container: Container,
     post_repository: mock.Mock,
     uc: ListFeedPostsUseCase,
     uc_input: ListFeedPostsInput,
@@ -118,11 +117,7 @@ async def test_happy_path(
     assert post_repository.get_list.call_args_list == [get_list_call]
 
 
-async def test_empty_list(
-    container: Container,
-    post_repository: mock.Mock,
-    uc: ListFeedPostsUseCase,
-) -> None:
+async def test_empty_list(post_repository: mock.Mock, uc: ListFeedPostsUseCase) -> None:
     post_repository.get_list.return_value = []
 
     uc_input = ListFeedPostsInput(offset=0, limit=100)

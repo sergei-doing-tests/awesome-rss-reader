@@ -40,19 +40,19 @@ async def test_create_feed_happy_path(
 
     assert resp.status_code == 202
     resp_json = resp.json()
-    assert resp_json.keys() == {"id", "url", "title", "created_at", "refreshed_at"}
+    assert resp_json.keys() == {"id", "url", "title", "created_at", "published_at"}
     assert resp_json["id"] is not None
     assert resp_json["created_at"] is not None
     assert resp_json["url"] == "https://example.com/feed.xml"
     assert resp_json["title"] is None
-    assert resp_json["refreshed_at"] is None
+    assert resp_json["published_at"] is None
 
     # feed is created in the database
     db_feed = await fetchone(sa.select(mdl.Feed).where(mdl.Feed.c.id == resp_json["id"]))
     assert db_feed["id"] == resp_json["id"]
     assert db_feed["url"] == "https://example.com/feed.xml"
     assert db_feed["title"] is None
-    assert db_feed["refreshed_at"] is None
+    assert db_feed["published_at"] is None
     assert db_feed["created_at"] == isoparse(resp_json["created_at"])
 
     # user feed is created in the database

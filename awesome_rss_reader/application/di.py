@@ -9,8 +9,11 @@ from awesome_rss_reader.core.usecase.list_feed_posts import ListFeedPostsUseCase
 from awesome_rss_reader.core.usecase.list_user_feeds import ListUserFollowedFeedsUseCase
 from awesome_rss_reader.core.usecase.read_post import ReadPostUseCase
 from awesome_rss_reader.core.usecase.refresh_feed import RefreshFeedUseCase
+from awesome_rss_reader.core.usecase.schedule_feed_update import ScheduleFeedUpdateUseCase
 from awesome_rss_reader.core.usecase.unfollow_feed import UnfollowFeedUseCase
 from awesome_rss_reader.core.usecase.unread_post import UnreadPostUseCase
+from awesome_rss_reader.core.usecase.update_feed_content import UpdateFeedContentUseCase
+from awesome_rss_reader.data.external.feed_content import ExternalFeedContentRepository
 from awesome_rss_reader.data.noop.users import NoopUserRepository
 from awesome_rss_reader.data.postgres.database import (
     PostgresSettings,
@@ -50,6 +53,7 @@ class Repositories(containers.DeclarativeContainer):
     feed_refresh_jobs = providers.Singleton(PostgresFeedRefreshJobRepository, db=database.engine)
     feed_posts = providers.Singleton(PostgresFeedPostRepository, db=database.engine)
     user_posts = providers.Singleton(PostgresUserPostRepository, db=database.engine)
+    feed_content = providers.Singleton(ExternalFeedContentRepository)
 
 
 class UseCases(containers.DeclarativeContainer):
@@ -103,6 +107,22 @@ class UseCases(containers.DeclarativeContainer):
         UnreadPostUseCase,
         post_repository=repositories.feed_posts,
         user_post_repository=repositories.user_posts,
+    )
+
+    schedule_feed_update = providers.Factory(
+        ScheduleFeedUpdateUseCase,
+        app_settings=settings.app,
+        job_repository=repositories.feed_refresh_jobs,
+    )
+
+    update_feed_content = providers.Factory(
+        UpdateFeedContentUseCase,
+        app_settings=settings.app,
+        job_repository=repositories.feed_refresh_jobs,
+        feed_repository=repositories.feeds,
+        content_repository=repositories.feed_content,
+        post_repository=repositories.feed_posts,
+        atomic=repositories.atomic,
     )
 
 

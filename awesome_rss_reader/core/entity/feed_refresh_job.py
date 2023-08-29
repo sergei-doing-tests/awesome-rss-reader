@@ -1,4 +1,4 @@
-from enum import IntEnum, auto
+from enum import Enum, IntEnum, auto
 
 from pydantic import AwareDatetime, BaseModel, Field
 
@@ -27,6 +27,7 @@ class NewFeedRefreshJob(BaseModel):
 
 class FeedRefreshJob(NewFeedRefreshJob):
     id: int  # noqa: A003
+    state_changed_at: AwareDatetime
     created_at: AwareDatetime
     updated_at: AwareDatetime
 
@@ -34,3 +35,15 @@ class FeedRefreshJob(NewFeedRefreshJob):
 class FeedRefreshJobUpdates(BaseModel):
     execute_after: AwareDatetime | None = None
     retries: int | None = None
+
+
+class FeedRefreshJobFiltering(BaseModel):
+    state: FeedRefreshJobState | None = None
+    state_changed_before: AwareDatetime | None = None
+    execute_before: AwareDatetime | None = None
+
+
+class FeedRefreshJobOrdering(Enum):
+    id_asc = auto()
+    execute_after_asc = auto()
+    state_changed_at_asc = auto()

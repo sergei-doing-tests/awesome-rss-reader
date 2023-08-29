@@ -6,7 +6,7 @@ import pytest_asyncio
 import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from awesome_rss_reader.core.entity.feed import FeedOrdering, NewFeed
+from awesome_rss_reader.core.entity.feed import FeedFiltering, FeedOrdering, NewFeed
 from awesome_rss_reader.core.entity.user_feed import NewUserFeed
 from awesome_rss_reader.core.repository.feed import FeedNotFoundError
 from awesome_rss_reader.data.postgres import models as mdl
@@ -34,17 +34,17 @@ async def _setup_feeds(
         NewFeedFactory.build(
             url="https://example.com/feed.xml",
             title="Example Feed",
-            refreshed_at=now - timedelta(days=1),
+            published_at=now - timedelta(days=1),
         ),
         NewFeedFactory.build(
             url="https://example.com/feed.rss",
             title="Example RSS",
-            refreshed_at=now - timedelta(days=1),
+            published_at=now - timedelta(days=1),
         ),
         NewFeedFactory.build(
             url="https://example.com/feed.atom",
             title="Example Atom",
-            refreshed_at=now - timedelta(hours=1),
+            published_at=now - timedelta(hours=1),
         ),
     )
 
@@ -141,7 +141,6 @@ async def test_get_by_url_not_found(
     insert_feeds: InsertFeedsFixtureT,
     test_url: str,
 ) -> None:
-    # have some feeds in the db
     feeds = [
         NewFeedFactory.build(url=url)
         for url in ("https://example.com/feed.xml", "https://example.com/feed.rss")
@@ -159,7 +158,7 @@ async def test_get_or_create_new(repo: PostgresFeedRepository, fetchone: FetchOn
     assert feed.id is not None
     assert feed.url == new_feed.url
     assert feed.title is None
-    assert feed.refreshed_at is None
+    assert feed.published_at is None
     assert feed.created_at is not None
 
     query = sa.select(mdl.Feed).where(mdl.Feed.c.id == feed.id)
@@ -167,7 +166,7 @@ async def test_get_or_create_new(repo: PostgresFeedRepository, fetchone: FetchOn
     assert db_row["id"] == feed.id
     assert db_row["url"] == feed.url
     assert db_row["title"] is None
-    assert db_row["refreshed_at"] is None
+    assert db_row["published_at"] is None
     assert db_row["created_at"] == feed.created_at
 
 
@@ -179,7 +178,7 @@ async def test_get_or_create_existing(
         NewFeed(
             url="https://example.com/feed.xml",
             title="Example Feed",
-            refreshed_at=datetime(2006, 1, 2, 15, 4, 5, 999999, tzinfo=UTC),
+            published_at=datetime(2006, 1, 2, 15, 4, 5, 999999, tzinfo=UTC),
         )
     )
 
@@ -189,7 +188,7 @@ async def test_get_or_create_existing(
     assert feed.id == existing_feed.id
     assert feed.url == "https://example.com/feed.xml"
     assert feed.title == "Example Feed"
-    assert feed.refreshed_at == datetime(2006, 1, 2, 15, 4, 5, 999999, tzinfo=UTC)
+    assert feed.published_at == datetime(2006, 1, 2, 15, 4, 5, 999999, tzinfo=UTC)
     assert feed.created_at is not None
 
 
@@ -201,7 +200,7 @@ async def test_get_or_create_feed_with_same_title(
         NewFeed(
             url="https://example.com/feed.xml",
             title="Example Feed",
-            refreshed_at=datetime(2006, 1, 2, 15, 4, 5, 999999, tzinfo=UTC),
+            published_at=datetime(2006, 1, 2, 15, 4, 5, 999999, tzinfo=UTC),
         )
     )
 
@@ -247,13 +246,13 @@ async def test_get_list_default_ordering(
         (3, 10, []),
     ],
 )
-async def test_get_list_order_by_refreshed_at_desc(
+async def test_get_list_order_by_published_at_desc(
     repo: PostgresFeedRepository,
     offset: int,
     limit: int,
     expected: list[str],
 ) -> None:
-    feeds = await repo.get_list(limit=limit, offset=offset, order_by=FeedOrdering.refreshed_at_desc)
+    feeds = await repo.get_list(limit=limit, offset=offset, order_by=FeedOrdering.published_at_desc)
     assert [f.title for f in feeds] == expected
 
 
@@ -271,21 +270,21 @@ async def test_get_list_order_by_refreshed_at_desc(
         ),
         (
             uuid.UUID("decade00-0000-4000-a000-000000000000"),
-            FeedOrdering.refreshed_at_desc,
+            FeedOrdering.published_at_desc,
             0,
             10,
             ["Example Atom", "Example RSS", "Example Feed"],
         ),
         (
             uuid.UUID("decade00-0000-4000-a000-000000000000"),
-            FeedOrdering.refreshed_at_desc,
+            FeedOrdering.published_at_desc,
             1,
             1,
             ["Example RSS"],
         ),
         (
             uuid.UUID("decade00-0000-4000-a000-000000000000"),
-            FeedOrdering.refreshed_at_desc,
+            FeedOrdering.published_at_desc,
             10,
             10,
             [],
@@ -300,21 +299,21 @@ async def test_get_list_order_by_refreshed_at_desc(
         ),
         (
             uuid.UUID("facade00-0000-4000-a000-000000000000"),
-            FeedOrdering.refreshed_at_desc,
+            FeedOrdering.published_at_desc,
             0,
             10,
             ["Example Atom"],
         ),
         (
             uuid.UUID("facade00-0000-4000-a000-000000000000"),
-            FeedOrdering.refreshed_at_desc,
+            FeedOrdering.published_at_desc,
             1,
             1,
             [],
         ),
         (
             uuid.UUID("facade00-0000-4000-a000-000000000000"),
-            FeedOrdering.refreshed_at_desc,
+            FeedOrdering.published_at_desc,
             10,
             20,
             [],
@@ -329,7 +328,7 @@ async def test_get_list_order_by_refreshed_at_desc(
         ),
         (
             uuid.UUID("c0c0a000-0000-4000-a000-000000000000"),
-            FeedOrdering.refreshed_at_desc,
+            FeedOrdering.published_at_desc,
             0,
             10,
             [],
@@ -347,7 +346,43 @@ async def test_get_list_followed_by_user(
     feeds = await repo.get_list(
         limit=limit,
         offset=offset,
-        followed_by=user_uid,
+        filter_by=FeedFiltering(followed_by=user_uid),
         order_by=ordering,
     )
     assert [f.title for f in feeds] == expected
+
+
+async def test_get_list_by_ids(
+    repo: PostgresFeedRepository,
+    insert_feeds: InsertFeedsFixtureT,
+) -> None:
+    feed1, feed2, feed3 = await insert_feeds(
+        NewFeedFactory.build(
+            url="https://example.com/feed.xml",
+            title="Example Feed",
+        ),
+        NewFeedFactory.build(
+            url="https://example.com/feed.rss",
+            title="Example RSS",
+        ),
+        NewFeedFactory.build(
+            url="https://example.com/feed.atom",
+            title="Example Atom",
+        ),
+    )
+
+    feeds = await repo.get_list(
+        filter_by=FeedFiltering(ids=[feed1.id, feed3.id]),
+        order_by=FeedOrdering.id_asc,
+        limit=10,
+        offset=0,
+    )
+    assert [f.title for f in feeds] == ["Example Feed", "Example Atom"]
+
+    no_feeds = await repo.get_list(
+        filter_by=FeedFiltering(ids=[100, 200]),
+        order_by=FeedOrdering.id_asc,
+        limit=10,
+        offset=0,
+    )
+    assert no_feeds == []

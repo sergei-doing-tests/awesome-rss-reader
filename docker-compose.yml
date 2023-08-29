@@ -1,30 +1,41 @@
-version: "3.2"
+version: "3.8"
+
+x-common-service: &common-service
+  build:
+    context: .
+  env_file:
+    - .env
+  depends_on:
+    - postgresql
+  links:
+    - postgresql
+  restart: always
+  volumes:
+    - .:/app/src
 
 services:
   devserver:
-    build:
-      context: .
+    <<: *common-service
     command: api
     environment:
       API_HOST: "0.0.0.0"
       API_POST: 8000
       API_RELOAD: "true"
-    env_file:
-      - .env
-    depends_on:
-      - postgresql
-    links:
-      - postgresql
     ports:
       - "8000:8000"
-    restart: always
-    volumes:
-      - .:/app/src
+
+  scheduler:
+    <<: *common-service
+    command: scheduler
+
+  worker:
+    <<: *common-service
+    command: worker
 
   postgresql:
     command: >
       postgres
-        -c log_statement=all
+        -c log_statement=none
         -c log_lock_waits=true
         -c log_min_duration_statement=-1
         -c log_min_error_statement=panic

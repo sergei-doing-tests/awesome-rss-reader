@@ -27,7 +27,6 @@ def uc(
 
 
 async def test_happy_path(
-    container: Container,
     feed_repository: mock.Mock,
     user_feed_repository: mock.Mock,
     job_repository: mock.Mock,
@@ -76,7 +75,7 @@ async def test_happy_path(
     return_value=datetime(2006, 1, 2, 15, 4, 5, 999999, tzinfo=UTC),
 )
 async def test_refresh_job_for_existing_feeds(
-    container: Container,
+    now_aware_mock: mock.Mock,
     feed_repository: mock.Mock,
     user_feed_repository: mock.Mock,
     job_repository: mock.Mock,
@@ -120,7 +119,6 @@ async def test_refresh_job_for_existing_feeds(
 
 
 async def test_job_state_transition_error_is_handled(
-    container: Container,
     feed_repository: mock.Mock,
     user_feed_repository: mock.Mock,
     job_repository: mock.Mock,

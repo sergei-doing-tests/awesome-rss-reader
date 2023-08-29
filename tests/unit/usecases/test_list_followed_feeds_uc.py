@@ -21,11 +21,7 @@ def uc(
     return container.use_cases.list_followed_feeds()
 
 
-async def test_happy_path(
-    container: Container,
-    feed_repository: mock.Mock,
-    uc: ListUserFollowedFeedsUseCase,
-) -> None:
+async def test_happy_path(feed_repository: mock.Mock, uc: ListUserFollowedFeedsUseCase) -> None:
     user_uid = uuid.uuid4()
     feeds = FeedFactory.batch(5)
 
@@ -36,18 +32,16 @@ async def test_happy_path(
     assert uc_result.feeds == feeds
 
     feed_repository.get_list.assert_called_once_with(
-        followed_by=user_uid,
-        order_by=feed_repo.FeedOrdering.refreshed_at_desc,
+        filter_by=feed_repo.FeedFiltering(
+            followed_by=user_uid,
+        ),
+        order_by=feed_repo.FeedOrdering.published_at_desc,
         offset=0,
         limit=100,
     )
 
 
-async def test_empty_list(
-    container: Container,
-    feed_repository: mock.Mock,
-    uc: ListUserFollowedFeedsUseCase,
-) -> None:
+async def test_empty_list(feed_repository: mock.Mock, uc: ListUserFollowedFeedsUseCase) -> None:
     user_uid = uuid.uuid4()
 
     feed_repository.get_list.return_value = []
@@ -58,8 +52,10 @@ async def test_empty_list(
     assert uc_result.feeds == []
 
     feed_repository.get_list.assert_called_once_with(
-        followed_by=user_uid,
-        order_by=feed_repo.FeedOrdering.refreshed_at_desc,
+        filter_by=feed_repo.FeedFiltering(
+            followed_by=user_uid,
+        ),
+        order_by=feed_repo.FeedOrdering.published_at_desc,
         offset=0,
         limit=100,
     )

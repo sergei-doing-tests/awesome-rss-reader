@@ -30,7 +30,7 @@ def uc(
     return_value=datetime(2006, 1, 2, 15, 4, 5, 999999, tzinfo=UTC),
 )
 async def test_happy_path(
-    container: Container,
+    now_aware_mock: mock.Mock,
     post_repository: mock.Mock,
     user_post_repository: mock.Mock,
     uc: ReadPostUseCase,
@@ -58,7 +58,6 @@ async def test_happy_path(
 
 
 async def test_post_not_found(
-    container: Container,
     post_repository: mock.Mock,
     user_post_repository: mock.Mock,
     uc: ReadPostUseCase,
@@ -78,7 +77,7 @@ async def test_post_not_found(
     return_value=datetime(2006, 1, 2, 15, 4, 5, 999999, tzinfo=UTC),
 )
 async def test_post_not_found_on_get_or_create(
-    container: Container,
+    now_aware_mock: mock.Mock,
     post_repository: mock.Mock,
     user_post_repository: mock.Mock,
     uc: ReadPostUseCase,

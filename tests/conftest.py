@@ -8,15 +8,12 @@ from fastapi import FastAPI
 from sqlalchemy import URL, NullPool, make_url
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy_utils import create_database, database_exists, drop_database
-from starlette.testclient import TestClient
 
 from awesome_rss_reader.application import di
 from awesome_rss_reader.application.di import Container
-from awesome_rss_reader.core.entity.user import User
 from awesome_rss_reader.data.postgres.database import PostgresSettings
 from awesome_rss_reader.data.postgres.models import metadata
 from awesome_rss_reader.fastapi import entrypoint as api_entrypoint
-from awesome_rss_reader.fastapi.depends.auth import get_current_user
 
 logger = structlog.get_logger()
 
@@ -111,22 +108,3 @@ def fastapi_app(container: Container) -> FastAPI:
     app = api_entrypoint.init(container)
     yield app
     app.dependency_overrides.clear()
-
-
-@pytest.fixture()
-def api_client(fastapi_app: FastAPI) -> TestClient:
-    return TestClient(fastapi_app)
-
-
-@pytest.fixture()
-def api_client_factory(fastapi_app: FastAPI) -> Callable[[User | None], TestClient]:
-    def factory(user: User | None = None) -> TestClient:
-        async def auth_user() -> User | None:
-            return user
-
-        if user is not None:
-            fastapi_app.dependency_overrides[get_current_user] = auth_user
-
-        return TestClient(fastapi_app)
-
-    return factory

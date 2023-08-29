@@ -7,6 +7,8 @@ from sqlalchemy.exc import IntegrityError
 
 from awesome_rss_reader.core.entity.feed_refresh_job import (
     FeedRefreshJob,
+    FeedRefreshJobFiltering,
+    FeedRefreshJobOrdering,
     FeedRefreshJobState,
     FeedRefreshJobUpdates,
     NewFeedRefreshJob,
@@ -19,6 +21,7 @@ from awesome_rss_reader.core.repository.feed_refresh_job import (
 )
 from awesome_rss_reader.data.postgres import models as mdl
 from awesome_rss_reader.data.postgres.repositories.base import BasePostgresRepository
+from awesome_rss_reader.utils.dtime import now_aware
 
 logger = structlog.get_logger()
 
@@ -85,8 +88,60 @@ class PostgresFeedRefreshJobRepository(BasePostgresRepository, FeedRefreshJobRep
             case _:
                 raise ie
 
+    async def get_list(
+        self,
+        *,
+        order_by: FeedRefreshJobOrdering = FeedRefreshJobOrdering.id_asc,
+        filter_by: FeedRefreshJobFiltering | None = None,
+        limit: int,
+        offset: int,
+    ) -> list[FeedRefreshJob]:
+        query = sa.select(mdl.FeedRefreshJob)
+
+        if filter_by:
+            query = self._apply_filtering(query, filter_by)
+
+        match order_by:
+            case FeedRefreshJobOrdering.id_asc:
+                query = query.order_by(mdl.FeedRefreshJob.c.id.asc())
+            case FeedRefreshJobOrdering.execute_after_asc:
+                query = query.order_by(
+                    mdl.FeedRefreshJob.c.execute_after.asc(), mdl.FeedRefreshJob.c.id.asc()
+                )
+            case FeedRefreshJobOrdering.state_changed_at_asc:
+                query = query.order_by(
+                    mdl.FeedRefreshJob.c.state_changed_at.asc(), mdl.FeedRefreshJob.c.id.asc()
+                )
+            case _:
+                raise ValueError(f"Unknown feed ordering: {order_by}")
+
+        query = query.limit(limit).offset(offset)
+
+        async with self.db.connect() as conn:
+            result = await conn.execute(query)
+
+        return [FeedRefreshJob.model_validate(dict(row)) for row in result.mappings()]
+
+    def _apply_filtering(
+        self,
+        query: sa.Select,
+        filter_by: FeedRefreshJobFiltering,
+    ) -> sa.Select:
+        if filter_by.state:
+            query = query.where(mdl.FeedRefreshJob.c.state == filter_by.state.value)
+
+        if filter_by.state_changed_before:
+            query = query.where(
+                mdl.FeedRefreshJob.c.state_changed_at < filter_by.state_changed_before
+            )
+
+        if filter_by.execute_before:
+            query = query.where(mdl.FeedRefreshJob.c.execute_after < filter_by.execute_before)
+
+        return query
+
     async def update(self, *, job_id: int, updates: FeedRefreshJobUpdates) -> FeedRefreshJob:
-        query = (
+        update_q = (
             sa.update(mdl.FeedRefreshJob)
             .where(mdl.FeedRefreshJob.c.id == job_id)
             .values(**updates.model_dump(exclude_unset=True))
@@ -94,7 +149,7 @@ class PostgresFeedRefreshJobRepository(BasePostgresRepository, FeedRefreshJobRep
         )
 
         async with self.db.begin() as conn:
-            result = await conn.execute(query)
+            result = await conn.execute(update_q)
 
             if row := result.mappings().fetchone():
                 return FeedRefreshJob.model_validate(dict(row))
@@ -103,6 +158,7 @@ class PostgresFeedRefreshJobRepository(BasePostgresRepository, FeedRefreshJobRep
 
     async def transit_state(
         self,
+        *,
         job_id: int,
         old_state: FeedRefreshJobState,
         new_state: FeedRefreshJobState,
@@ -119,7 +175,10 @@ class PostgresFeedRefreshJobRepository(BasePostgresRepository, FeedRefreshJobRep
                     mdl.FeedRefreshJob.c.state == old_state,
                 )
             )
-            .values(state=new_state)
+            .values(
+                state=new_state,
+                state_changed_at=now_aware(),
+            )
             .returning(mdl.FeedRefreshJob)
         )
 
@@ -134,3 +193,41 @@ class PostgresFeedRefreshJobRepository(BasePostgresRepository, FeedRefreshJobRep
         raise RefreshJobStateTransitionError(
             f"Failed to transit refresh job with {job_id=} from {old_state=} to {new_state=}"
         )
+
+    async def transit_state_batch(
+        self,
+        *,
+        job_ids: list[int],
+        old_state: FeedRefreshJobState,
+        new_state: FeedRefreshJobState,
+    ) -> list[FeedRefreshJob]:
+        # fmt: off
+        select_for_update_q = (
+            sa
+            .select(mdl.FeedRefreshJob)
+            .with_for_update(skip_locked=True)
+            .where(mdl.FeedRefreshJob.c.id.in_(job_ids))
+            .order_by(mdl.FeedRefreshJob.c.id)
+        )
+
+        update_q = (
+            sa.update(mdl.FeedRefreshJob)
+            .where(
+                sa.and_(
+                    mdl.FeedRefreshJob.c.id.in_(job_ids),
+                    mdl.FeedRefreshJob.c.state == old_state,
+                )
+            )
+            .values(
+                state=new_state,
+                state_changed_at=now_aware(),
+            )
+            .returning(mdl.FeedRefreshJob)
+        )
+        # fmt: on
+
+        async with self.db.begin() as conn:
+            await conn.execute(select_for_update_q)
+            result = await conn.execute(update_q)
+
+        return [FeedRefreshJob.model_validate(dict(row)) for row in result.mappings()]

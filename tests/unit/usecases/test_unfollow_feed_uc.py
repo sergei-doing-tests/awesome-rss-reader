@@ -24,7 +24,6 @@ def uc(
 
 
 async def test_happy_path(
-    container: Container,
     feed_repository: mock.Mock,
     user_feed_repository: mock.Mock,
     uc: UnfollowFeedUseCase,
@@ -49,7 +48,6 @@ async def test_happy_path(
 
 
 async def test_feed_not_found(
-    container: Container,
     feed_repository: mock.Mock,
     user_feed_repository: mock.Mock,
     uc: UnfollowFeedUseCase,
@@ -66,7 +64,6 @@ async def test_feed_not_found(
 
 
 async def test_user_feed_not_found(
-    container: Container,
     feed_repository: mock.Mock,
     user_feed_repository: mock.Mock,
     uc: UnfollowFeedUseCase,
