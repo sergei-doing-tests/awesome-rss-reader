@@ -5,7 +5,7 @@ metadata:
   labels:
     {{- include "awesome-rss-reader.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.uvicorn.replicas }}
+  replicas: {{ .Values.api.replicas }}
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -13,17 +13,17 @@ spec:
       maxUnavailable: 25%
   selector:
     matchLabels:
-      {{- include "awesome-rss-reader.selectorLabels" . | nindent 6 }}
+      {{- include "awesome-rss-reader.selectorLabels" (set $ "Deployment" "api") | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "awesome-rss-reader.selectorLabels" . | nindent 8 }}
+        {{- include "awesome-rss-reader.selectorLabels" (set $ "Deployment" "api") | nindent 8 }}
     spec:
       {{- with $.Values.image.pullSecrets }}
       imagePullSecrets:
           {{- toYaml . | nindent 8 }}
       {{- end }}
-      terminationGracePeriodSeconds: {{ .Values.uvicorn.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ .Values.api.terminationGracePeriodSeconds }}
       containers:
         - name: {{ include "awesome-rss-reader.podname" (set . "Name" "api") }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
@@ -31,10 +31,10 @@ spec:
           args: [api]
           ports:
             - name: uvicorn
-              containerPort: {{ .Values.uvicorn.targetPort }}
+              containerPort: {{ .Values.api.targetPort }}
               protocol: TCP
           env:
-          {{- range $key, $val := .Values.uvicorn.env }}
+          {{- range $key, $val := .Values.api.env }}
             - name: {{ $key }}
               value: "{{ $val }}"
           {{- end }}
@@ -53,4 +53,98 @@ spec:
           readinessProbe:
             {{- toYaml .Values.readinessProbe | nindent 12 }}
           resources:
-            {{- toYaml .Values.uvicorn.resources | nindent 12 }}
+            {{- toYaml .Values.api.resources | nindent 12 }}
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "awesome-rss-reader.podname" (set . "Name" "scheduler") }}
+  labels:
+    {{- include "awesome-rss-reader.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.scheduler.replicas }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "awesome-rss-reader.selectorLabels" (set $ "Deployment" "scheduler") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "awesome-rss-reader.selectorLabels" (set $ "Deployment" "scheduler") | nindent 8 }}
+    spec:
+      {{- with $.Values.image.pullSecrets }}
+      imagePullSecrets:
+          {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ include "awesome-rss-reader.podname" (set . "Name" "scheduler") }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args: [scheduler]
+          env:
+          {{- range $key, $val := .Values.scheduler.env }}
+            - name: {{ $key }}
+              value: "{{ $val }}"
+          {{- end }}
+          {{- range $key, $val := .Values.sharedEnv }}
+            - name: {{ $key }}
+              value: "{{ $val }}"
+          {{- end }}
+          envFrom:
+          {{- range .Values.envFromSecrets }}
+            - secretRef:
+                name: {{ tpl .name $ }}
+                optional: {{ .optional | default false }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.scheduler.resources | nindent 12 }}
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "awesome-rss-reader.podname" (set . "Name" "worker") }}
+  labels:
+    {{- include "awesome-rss-reader.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.worker.replicas }}
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      {{- include "awesome-rss-reader.selectorLabels" (set $ "Deployment" "worker") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "awesome-rss-reader.selectorLabels" (set $ "Deployment" "worker") | nindent 8 }}
+    spec:
+      {{- with $.Values.image.pullSecrets }}
+      imagePullSecrets:
+          {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ include "awesome-rss-reader.podname" (set . "Name" "worker") }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args: [worker]
+          env:
+          {{- range $key, $val := .Values.worker.env }}
+            - name: {{ $key }}
+              value: "{{ $val }}"
+          {{- end }}
+          {{- range $key, $val := .Values.sharedEnv }}
+            - name: {{ $key }}
+              value: "{{ $val }}"
+          {{- end }}
+          envFrom:
+          {{- range .Values.envFromSecrets }}
+            - secretRef:
+                name: {{ tpl .name $ }}
+                optional: {{ .optional | default false }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.worker.resources | nindent 12 }}

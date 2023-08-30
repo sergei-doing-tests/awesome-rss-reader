@@ -7,6 +7,7 @@
 {{- end }}
 
 {{- define "awesome-rss-reader.selectorLabels" -}}
+deployment: {{ .Deployment }}
 {{ include "awesome-rss-reader.releaseLabels" . }}
 {{- end }}
 

@@ -41,4 +41,3 @@ ENV APP_RELEASE_COMMIT $git_release_sha
 WORKDIR /app/src
 ENV TERM xterm
 ENTRYPOINT ["python", "main.py"]
-CMD ["/bin/true"]

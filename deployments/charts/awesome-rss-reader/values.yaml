@@ -4,7 +4,7 @@ image:
   pullSecrets: ""
   tag: ""
 
-uvicorn:
+api:
   port: 8800
   targetPort: 8800
   replicas: 2
@@ -13,6 +13,32 @@ uvicorn:
     API_HOST: "0.0.0.0"
     API_PORT: 8800
     API_LOG_LEVEL: "info"
+  resources: {}
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+scheduler:
+  replicas: 1
+  env:
+    SCHEDULER_INTERVAL: 5
+    SCHEDULER_CONCURRENCY: 100
+  resources: {}
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+worker:
+  replicas: 2
+  env:
+    WORKER_INTERVAL: 5
+    WORKER_CONCURRENCY: 50
   resources: {}
     # limits:
     #   cpu: 100m

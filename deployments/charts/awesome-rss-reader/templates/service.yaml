@@ -7,9 +7,9 @@ metadata:
 spec:
   type: {{ .Values.service.type }}
   ports:
-    - port: {{ .Values.uvicorn.port }}
-      targetPort: {{ .Values.uvicorn.targetPort }}
+    - port: {{ .Values.api.port }}
+      targetPort: {{ .Values.api.targetPort }}
       protocol: TCP
       name: uvicorn
   selector:
-    {{- include "awesome-rss-reader.selectorLabels" . | nindent 4 }}
+    {{- include "awesome-rss-reader.selectorLabels" (set $ "Deployment" "api") | nindent 4 }}
