@@ -21,7 +21,7 @@ class FeedUpdates(BaseModel):
 
 
 class FeedFiltering(BaseModel):
-    ids: list[int] | None = None
+    feed_ids: list[int] | None = None
     followed_by: uuid.UUID | None = None
 
 

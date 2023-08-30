@@ -1,10 +1,13 @@
 import asyncio
 
 import click
+import structlog
 
 from awesome_rss_reader.application import di
 from awesome_rss_reader.application.di import Container
 from awesome_rss_reader.core.usecase.update_feed_content import UpdateFeedContentInput
+
+logger = structlog.get_logger()
 
 
 @click.command(context_settings={"auto_envvar_prefix": "WORKER"})
@@ -32,7 +35,10 @@ def worker(
 async def update_feed_content(container: Container, concurrency: int) -> None:
     uc_input = UpdateFeedContentInput(batch_size=concurrency)
     uc = container.use_cases.update_feed_content()
-    await uc.execute(uc_input)
+    try:
+        await uc.execute(uc_input)
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Failed to update feed content", exc_info=exc)
 
 
 async def run(

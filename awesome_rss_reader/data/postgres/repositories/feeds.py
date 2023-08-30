@@ -107,8 +107,8 @@ class PostgresFeedRepository(BasePostgresRepository, FeedRepository):
         return [Feed.model_validate(dict(row)) for row in result.mappings()]
 
     def _apply_filtering(self, query: sa.Select, filter_by: FeedFiltering) -> sa.Select:
-        if filter_by.ids:
-            query = query.where(mdl.Feed.c.id.in_(filter_by.ids))
+        if filter_by.feed_ids:
+            query = query.where(mdl.Feed.c.id.in_(filter_by.feed_ids))
 
         if filter_by.followed_by:
             # fmt: off

@@ -1,10 +1,12 @@
 import asyncio
 from collections.abc import Callable, Iterator
+from contextlib import AbstractContextManager, contextmanager
 
 import pytest
 import pytest_asyncio
 import structlog
 from fastapi import FastAPI
+from pytest_localserver.http import ContentServer
 from sqlalchemy import URL, NullPool, make_url
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy_utils import create_database, database_exists, drop_database
@@ -108,3 +110,21 @@ def fastapi_app(container: Container) -> FastAPI:
     app = api_entrypoint.init(container)
     yield app
     app.dependency_overrides.clear()
+
+
+@pytest.fixture()
+def create_httpservers() -> Callable[[int], AbstractContextManager[list[ContentServer]]]:
+    @contextmanager
+    def creator(num_servers: int) -> Iterator[list[ContentServer]]:
+        servers = []
+        for _ in range(num_servers):
+            server = ContentServer()
+            server.daemon = True
+            servers.append(server)
+        for server in servers:
+            server.start()
+        yield servers
+        for server in servers:
+            server.stop()
+
+    return creator

@@ -32,6 +32,13 @@ logger = structlog.get_logger()
 
 
 @dataclass
+class _FetchResult:
+    job: FeedRefreshJob
+    result: FeedContentResult | None = None
+    error: Exception | None = None
+
+
+@dataclass
 class UpdateFeedContentInput:
     batch_size: int
 
@@ -41,7 +48,7 @@ class UpdateFeedContentUseCase(BaseUseCase):
     app_settings: ApplicationSettings
     job_repository: FeedRefreshJobRepository
     feed_repository: FeedRepository
-    content_repository: FeedContentRepository
+    feed_content_repository: FeedContentRepository
     post_repository: FeedPostRepository
     atomic: AtomicProvider
 
@@ -56,7 +63,7 @@ class UpdateFeedContentUseCase(BaseUseCase):
             logger.warning("No jobs were received")
             return
 
-        await self._process_jobs(received_jobs)
+        await self._process_received_jobs(received_jobs)
 
     async def _get_available_jobs(self, *, batch_size: int) -> list[FeedRefreshJob]:
         return await self.job_repository.get_list(
@@ -90,53 +97,76 @@ class UpdateFeedContentUseCase(BaseUseCase):
     async def _get_feeds(self, feed_ids: list[int]) -> list[Feed]:
         return await self.feed_repository.get_list(
             filter_by=FeedFiltering(
-                ids=feed_ids,
+                feed_ids=feed_ids,
             ),
             limit=len(feed_ids),
             offset=0,
         )
 
-    async def _process_jobs(self, jobs: list[FeedRefreshJob]) -> None:
-        job_per_feed_id = {job.feed_id: job for job in jobs}
+    async def _process_received_jobs(self, jobs: list[FeedRefreshJob]) -> None:
+        logger.info("Processing jobs", count=len(jobs))
+
+        fetch_results = await self._fetch_content_for_jobs(jobs)
+        process_result_tasks = []
+
+        for fr in fetch_results:
+            if fr.error is not None:
+                process_result_tasks.append(self._process_job_exception(exc=fr.error, job=fr.job))
+            elif fr.result is not None:
+                process_result_tasks.append(self._process_job_result(result=fr.result, job=fr.job))
+
+        maybe_errors = await asyncio.gather(*process_result_tasks, return_exceptions=True)
+        # log unhandled exceptions that occurred in the gather call
+        for maybe_err in maybe_errors:
+            if not isinstance(maybe_err, Exception):
+                continue
+            logger.error("Failed to process job result", error=maybe_err)
+
+    async def _fetch_content_for_jobs(self, jobs: list[FeedRefreshJob]) -> list[_FetchResult]:
+        # fmt: off
+        job_per_feed_id = {
+            job.feed_id: job for job in jobs
+        }
+        job_per_request_id = {
+            uuid.uuid4(): job for job in jobs
+        }
+        request_id_per_job_id = {
+            job.id: request_id
+            for request_id, job in job_per_request_id.items()
+        }
+        # fmt: on
+
         feeds = await self._get_feeds(feed_ids=list(job_per_feed_id))
 
-        feed_per_request_id = {uuid.uuid4(): feed for feed in feeds}
-        requests = {
-            request_id: FeedContentRequest(
+        requests = [
+            FeedContentRequest(
+                request_id=request_id_per_job_id[job_per_feed_id[feed.id].id],
                 url=feed.url,
                 published_since=feed.published_at,
             )
-            for request_id, feed in feed_per_request_id.items()
-        }
+            for feed in feeds
+        ]
 
-        batch_request = FeedContentBatchRequest(
-            timeout=self.app_settings.feed_update_fetch_timeout_s,
+        request = FeedContentBatchRequest(
+            timeout_s=self.app_settings.feed_update_fetch_timeout_s,
+            max_body_size_b=self.app_settings.feed_max_size_b,
             requests=requests,
         )
-        batch_result = await self.content_repository.fetch_many(batch_request)
+        response = await self.feed_content_repository.fetch_many(request)
 
-        coros = []
-        # handle successful results
-        for request_id, result in batch_result.results.items():
-            feed = feed_per_request_id[request_id]
-            job = job_per_feed_id[feed.id]
-            coros.append(self._handle_job_success(result=result, feed=feed, job=job))
+        fetch_results = []
 
-        # handle errors
-        for request_id, error in batch_result.errors.items():
-            feed = feed_per_request_id[request_id]
-            job = job_per_feed_id[feed.id]
-            coros.append(self._handle_job_error(error=error, job=job))
+        for request_id, result in response.results.items():
+            job = job_per_request_id[request_id]
+            fetch_results.append(_FetchResult(job=job, result=result))
 
-        await asyncio.gather(*coros)
+        for request_id, exception in response.errors.items():
+            job = job_per_request_id[request_id]
+            fetch_results.append(_FetchResult(job=job, error=exception))
 
-    async def _handle_job_success(
-        self,
-        *,
-        result: FeedContentResult,
-        feed: Feed,
-        job: FeedRefreshJob,
-    ) -> None:
+        return fetch_results
+
+    async def _process_job_result(self, *, result: FeedContentResult, job: FeedRefreshJob) -> None:
         logger.info("Update feed content job succeeded", feed=job.feed_id, job=job.id)
 
         async with self.atomic.transaction():
@@ -145,15 +175,19 @@ class UpdateFeedContentUseCase(BaseUseCase):
                 old_state=job.state,
                 new_state=FeedRefreshJobState.complete,
             )
+            await self.job_repository.update(
+                job_id=job.id,
+                updates=FeedRefreshJobUpdates(
+                    retries=0,
+                ),
+            )
 
             if not result.items:
-                # fmt: off
                 logger.info("Feed has no new content", feed=job.feed_id, job=job.id)
-                # fmt: on
                 return
 
             await self.feed_repository.update(
-                feed_id=feed.id,
+                feed_id=job.feed_id,
                 updates=FeedUpdates(
                     title=result.title,
                     published_at=result.published_at,
@@ -162,10 +196,10 @@ class UpdateFeedContentUseCase(BaseUseCase):
 
             new_posts = [
                 NewFeedPost(
-                    feed_id=feed.id,
+                    feed_id=job.feed_id,
                     title=feed_item.title,
                     summary=feed_item.summary,
-                    url=feed_item.url,
+                    url=str(feed_item.url),
                     guid=feed_item.guid,
                     published_at=feed_item.published_at,
                 )
@@ -180,22 +214,13 @@ class UpdateFeedContentUseCase(BaseUseCase):
         )
         # fmt: on
 
-    async def _handle_job_error(
-        self,
-        *,
-        error: Exception,
-        job: FeedRefreshJob,
-    ) -> None:
-        # fmt: off
-        logger.warning(
-            "Feed content update failed",
-            error=error, feed_id=job.feed_id, job_id=job.id,
-        )
-        # fmt: on
+    async def _process_job_exception(self, *, exc: Exception, job: FeedRefreshJob) -> None:
+        logger.warning("Feed content update failed", error=exc, feed_id=job.feed_id, job_id=job.id)
 
         # calculate backoff for the next retry
         try:
             backoff_m = self.app_settings.feed_update_retry_delay_m[job.retries]
+        # ran out of retries, have to mark the job as failed
         except IndexError:
             # fmt: off
             logger.warning(
@@ -203,15 +228,17 @@ class UpdateFeedContentUseCase(BaseUseCase):
                 feed_id=job.feed_id, job_id=job.id, retries=job.retries,
             )
             # fmt: on
-            await self._fail_job(job=job)
+            await self._mark_job_failed(job=job)
         # otherwise, schedule a retry
         else:
-            new_execute_after = now_aware() + timedelta(minutes=backoff_m)
-            await self._reschedule_job(
-                job=job, new_execute_after=new_execute_after, new_retries=job.retries + 1
+            await self._schedule_job_for_retry(
+                job=job,
+                new_execute_after=now_aware() + timedelta(minutes=backoff_m),
+                new_retries=job.retries + 1,
             )
 
-    async def _fail_job(self, job: FeedRefreshJob) -> None:
+    async def _mark_job_failed(self, job: FeedRefreshJob) -> None:
+        """Mark a job as failed, so it won't be retried anymore until manually reset."""
         await self.job_repository.transit_state(
             job_id=job.id,
             old_state=job.state,
@@ -224,12 +251,15 @@ class UpdateFeedContentUseCase(BaseUseCase):
         )
         # fmt: on
 
-    async def _reschedule_job(
+    async def _schedule_job_for_retry(
         self,
         job: FeedRefreshJob,
         new_execute_after: datetime,
         new_retries: int,
     ) -> None:
+        """
+        Reschedule a job to be retried at another time.
+        """
         async with self.atomic.transaction():
             job = await self.job_repository.transit_state(
                 job_id=job.id,

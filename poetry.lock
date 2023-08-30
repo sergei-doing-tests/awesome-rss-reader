@@ -1328,6 +1328,23 @@ pytest = ">=4.6"
 testing = ["fields", "hunter", "process-tests", "pytest-xdist", "six", "virtualenv"]
 
 [[package]]
+name = "pytest-localserver"
+version = "0.8.0"
+description = "pytest plugin to test server connections locally."
+optional = false
+python-versions = ">=3.5"
+files = [
+    {file = "pytest-localserver-0.8.0.tar.gz", hash = "sha256:5d90ce7d085d741e759fa854dbd2e7c5b557321d695179894eb40e210ea2ff30"},
+    {file = "pytest_localserver-0.8.0-py3-none-any.whl", hash = "sha256:d63e32fbb64543330ecb5468dea4db2c5ffac3b220eacbd60e3da173bb84f929"},
+]
+
+[package.dependencies]
+werkzeug = ">=0.10"
+
+[package.extras]
+smtp = ["aiosmtpd"]
+
+[[package]]
 name = "python-dateutil"
 version = "2.8.2"
 description = "Extensions to the standard Python datetime module"
@@ -1915,6 +1932,23 @@ files = [
 ]
 
 [[package]]
+name = "werkzeug"
+version = "2.3.7"
+description = "The comprehensive WSGI web application library."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "werkzeug-2.3.7-py3-none-any.whl", hash = "sha256:effc12dba7f3bd72e605ce49807bbe692bd729c3bb122a3b91747a6ae77df528"},
+    {file = "werkzeug-2.3.7.tar.gz", hash = "sha256:2b8c0e447b4b9dbcc85dd97b6eeb4dcbaf6c8b6c3be0bd654e25553e0a2157d8"},
+]
+
+[package.dependencies]
+MarkupSafe = ">=2.1.1"
+
+[package.extras]
+watchdog = ["watchdog (>=2.3)"]
+
+[[package]]
 name = "yarl"
 version = "1.9.2"
 description = "Yet another URL library"
@@ -2004,4 +2038,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "f43456f39ccfa826ae8d2f04093a5af15b7e5c1d555ba4c628b079bc7853207d"
+content-hash = "53df83981442a21a4077d13e06cf5bdb095ef4407a1e17f2047eed221bcab8af"

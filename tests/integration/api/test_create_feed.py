@@ -196,7 +196,7 @@ async def test_create_feed_refresh_job_already_exists(
         ("foobar/", "Input should be a valid URL, relative URL without a base"),
         ("https://", "Input should be a valid URL, empty host"),
         ("example.com/", "Input should be a valid URL, relative URL without a base"),
-        ("ftp://example.com/", "URL scheme should be 'http' or 'https'"),
+        ("ftp://example.com/", "URL scheme should be 'https'"),
     ],
 )
 async def test_create_feed_invalid_url(

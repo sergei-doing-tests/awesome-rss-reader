@@ -372,7 +372,7 @@ async def test_get_list_by_ids(
     )
 
     feeds = await repo.get_list(
-        filter_by=FeedFiltering(ids=[feed1.id, feed3.id]),
+        filter_by=FeedFiltering(feed_ids=[feed1.id, feed3.id]),
         order_by=FeedOrdering.id_asc,
         limit=10,
         offset=0,
@@ -380,7 +380,7 @@ async def test_get_list_by_ids(
     assert [f.title for f in feeds] == ["Example Feed", "Example Atom"]
 
     no_feeds = await repo.get_list(
-        filter_by=FeedFiltering(ids=[100, 200]),
+        filter_by=FeedFiltering(feed_ids=[100, 200]),
         order_by=FeedOrdering.id_asc,
         limit=10,
         offset=0,

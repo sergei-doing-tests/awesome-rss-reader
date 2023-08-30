@@ -1,11 +1,15 @@
 from datetime import datetime
 from enum import Enum
+from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl
+from pydantic import BaseModel, ConfigDict, Field, UrlConstraints
+from pydantic_core import Url
+
+HttpsUrl = Annotated[Url, UrlConstraints(max_length=2083, allowed_schemes=["https"])]
 
 
 class ApiCreateFeedBody(BaseModel):
-    url: HttpUrl = Field(..., description="Public URL of the rss feed")
+    url: HttpsUrl = Field(..., description="Public URL of the rss feed")
 
 
 class ApiFeed(BaseModel):

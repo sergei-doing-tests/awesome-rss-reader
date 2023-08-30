@@ -13,6 +13,9 @@ class ApplicationSettings(BaseSettings):
     feed_update_retry_delay_m: list[int] = [2, 5, 8]  # noqa: RUF012
     feed_update_fetch_timeout_s: int = 10
 
+    # some feed aggregators do not allow feeds larger than 512kb, so we do the same
+    feed_max_size_b: int = 512 * 1024
+
     model_config = SettingsConfigDict(env_prefix="APP_")
 
 

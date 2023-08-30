@@ -114,13 +114,12 @@ class UseCases(containers.DeclarativeContainer):
         app_settings=settings.app,
         job_repository=repositories.feed_refresh_jobs,
     )
-
     update_feed_content = providers.Factory(
         UpdateFeedContentUseCase,
         app_settings=settings.app,
         job_repository=repositories.feed_refresh_jobs,
         feed_repository=repositories.feeds,
-        content_repository=repositories.feed_content,
+        feed_content_repository=repositories.feed_content,
         post_repository=repositories.feed_posts,
         atomic=repositories.atomic,
     )
